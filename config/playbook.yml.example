@@ -1,0 +1,17 @@
+---
+plays:
+  - name: "first play"
+    policies:
+      - "find inactive access keys"
+    targets:
+      - roleType: readOnly
+        include:
+          - my-first-account
+          - 555456789012
+  - name: "second play"
+    policies:
+      - "remove password if MFA not enabled"
+    targets:
+      - roleType: admin
+        include:
+          - my-second-account  

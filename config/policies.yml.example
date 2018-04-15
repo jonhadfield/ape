@@ -1,0 +1,23 @@
+---
+policies:
+  - name: "find inactive access keys"
+    desc: "find acc keys not used in 90 days"
+    resource: iam:AccessKey
+    filters:
+      - criterion: LastUsed
+        comparison: ">"
+        unit: days
+        value: 90
+    actions:
+      - DeleteAccessKey
+
+  - name: "remove user password if not used"
+    desc: "remove console access if password not used in 90 days"
+    resource: iam:User
+    filters:
+      - criterion: PasswordLastUsed
+        comparison: ">"
+        unit: days
+        value: 90
+    actions:
+      - DeleteLoginProfile

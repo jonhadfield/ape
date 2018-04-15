@@ -1,0 +1,442 @@
+---
+policies:
+  - name: "recent root password usage "
+    severity: "low"
+    resource: iam:User
+    filters:
+      - criterion: UserName
+        comparison: "=="
+        value: "root"
+      - criterion: PasswordLastUsed
+        comparison: "<"
+        unit: days
+        value: 30
+
+  - name: "recent root access key usage"
+    severity: "medium"
+    resource: iam:User
+    filters:
+      - criterion: UserName
+        comparison: "=="
+        value: "root"
+      - criterion: ActiveAccessKeysLastUsed
+        comparison: "<"
+        unit: days
+        value: 90
+
+  - name: "users with password and without MFA"
+    severity: "critical"
+    resource: iam:User
+    filters:
+      - criterion: HasMFADevice
+        value: "false"
+      - criterion: HasPassword
+        value: "true"
+
+  - name: "users with password not used in 90 days"
+    severity: "high"
+    resource: iam:User
+    filters:
+      - criterion: HasPassword
+        value: "true"
+      - criterion: PasswordLastUsed
+        comparison: ">"
+        unit: days
+        value: 90
+
+  - name: "users with active access key not used in 90 days"
+    severity: "medium"
+    resource: iam:User
+    filters:
+      - criterion: ActiveAccessKeysLastUsed
+        comparison: ">"
+        unit: days
+        value: 90
+
+  - name: "ensure access keys are rotated every 90 days"
+    severity: "medium"
+    resource: iam:User
+    filters:
+      - criterion: ActiveAccessKeysLastRotated
+        comparison: ">"
+        unit: days
+        value: 90
+
+  - name: "ensure IAM password policy requires at least one uppercase letter"
+    severity: "high"
+    resource: iam:PasswordPolicy
+    filters:
+      - criterion: RequireAtLeastOneUpperCaseLetter
+        value: "false"
+
+  - name: "ensure IAM password policy require at least one lowercase letter"
+    severity: "medium"
+    resource: iam:PasswordPolicy
+    filters:
+      - criterion: RequireAtLeastOneLowerCaseLetter
+        value: "false"
+
+  - name: "ensure IAM password policy require at least one symbol"
+    severity: "medium"
+    resource: iam:PasswordPolicy
+    filters:
+      - criterion: RequireAtLeastOneNonAlphanumericCharacter
+        value: "false"
+
+  - name: "ensure IAM password policy require at least one number"
+    severity: "medium"
+    resource: iam:PasswordPolicy
+    filters:
+      - criterion: RequireAtLeastOneNumber
+        value: "false"
+
+  - name: "ensure IAM password policy requires minimum length of 14 or greater"
+    severity: "medium"
+    resource: iam:PasswordPolicy
+    filters:
+      - criterion: MinimumPasswordLength
+        comparison: "<"
+        value: 14
+
+  - name: "ensure IAM password policy prevents password reuse"
+    severity: "medium"
+    resource: iam:PasswordPolicy
+    filters:
+      - criterion: NumberOfPasswordsToRemember
+        comparison: "<"
+        value: 14
+
+  - name: "ensure IAM password policy expires passwords within 90 days or less"
+    severity: "high"
+    resource: iam:PasswordPolicy
+    filters:
+      - criterion: PasswordExpirationPeriod
+        comparison: ">"
+        value: 90
+
+  - name: "ensure no root account access key exists"
+    severity: "high"
+    resource: iam:User
+    filters:
+      - criterion: UserName
+        comparison: "=="
+        value: "root"
+      - criterion: HasActiveAccessKey
+        value: "true"
+
+  - name: "ensure MFA is enabled for the root account"
+    severity: "critical"
+    resource: iam:User
+    filters:
+      - criterion: UserName
+        comparison: "=="
+        value: "root"
+      - criterion: HasMFADevice
+        value: "false"
+
+  - name: "ensure hardware MFA is enabled for the root account"
+    severity: "low"
+    resource: iam:User
+    filters:
+      - criterion: UserName
+        comparison: "=="
+        value: "root"
+      - criterion: HasHardwareMFADevice
+        value: "false"
+
+  - name: "ensure IAM policies are attached only to groups or roles (Inline)"
+    severity: "medium"
+    resource: iam:User
+    filters:
+      - criterion: HasInlinePolicies
+        value: "true"
+
+  - name: "ensure IAM policies are attached only to groups or roles (Attached)"
+    severity: "medium"
+    resource: iam:User
+    filters:
+      - criterion: HasManagedPolicies
+        value: "true"
+
+  - name: "ensure IAM Master role is active"
+    severity: "medium"
+    resource: iam:Role
+    modifyresult: reverse
+    filters:
+      - criterion: RoleName
+        comparison: "contains"
+        value: "Master"
+
+  - name: "ensure IAM Manager role is active"
+    severity: "medium"
+    resource: iam:Role
+    modifyresult: reverse
+    filters:
+      - criterion: RoleName
+        comparison: "contains"
+        value: "Manager"
+
+  - name: "ensure a support role has been created to manage incidents with AWS Support"
+    severity: "low"
+    resource: iam:Role
+    modifyresult: reverse
+    filters:
+      - criterion: HasManagedPolicyAttached
+        comparison: "in"
+        values:
+          - "arn:aws:iam::aws:policy/AWSSupportAccess"
+
+  - name: "Do not setup access keys during initial user setup for all IAM users that have a console password"
+    severity: "low"
+    resource: iam:User
+    filters:
+      - criterion: HasActiveAccessKeyCreatedWithUser
+        value: "true"
+      - criterion: HasUnusedActiveAccessKey
+        value: "true"
+      - criterion: HasPassword
+        value: "true"
+
+  - name: "ensure IAM policies that allow full \"*:*\" administrative privileges are not created"
+    severity: "high"
+    resource: iam:Policy
+    filters:
+      - criterion: "Version"
+        value: "Default"
+      - criterion: "Effect"
+        value: "Allow"
+      - criterion: "Resource"
+        value: "*"
+      - criterion: "Action"
+        value: "*"
+
+  - name: "ensure CloudTrail is enabled in all regions"
+    severity: "high"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "IsMultiRegionTrail"
+        value: "false"
+
+  - name: "ensure CloudTrail log file validation is enabled"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "LogFileValidationEnabled"
+        value: "false"
+
+  - name: "ensure the S3 bucket CloudTrail logs to is not publicly accessible"
+    severity: "high"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "BucketPubliclyAccessible"
+        value: "true"
+
+  - name: "ensure CloudTrail trails are integrated with CloudWatch Logs"
+    severity: "high"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "LatestCloudWatchLogsDeliveryTime"
+        comparison: ">"
+        value: 1
+        unit: days
+
+  - name: "ensure AWS Config is enabled in all regions (all resource Types)"
+    severity: "high"
+    resource: config:Recorder
+    filters:
+      - criterion: "AllSupportedResourceTypes"
+        value: "false"
+
+  - name: "ensure AWS Config is enabled in all regions (global resource types)"
+    severity: "high"
+    resource: config:Recorder
+    filters:
+      - criterion: "IncludeGlobalResourceTypes"
+        value: "false"
+
+  - name: "ensure AWS Config is enabled in all regions (s3 bucket defined)"
+    severity: "high"
+    resource: config:Recorder
+    filters:
+      - criterion: "DeliveryChannelS3BucketNameDefined"
+        value: "false"
+
+  - name: "ensure AWS Config is enabled in all regions (sns topic defined)"
+    severity: "high"
+    resource: config:Recorder
+    filters:
+      - criterion: "DeliveryChannelSnsTopicARNDefined"
+        value: "false"
+
+  - name: "ensure S3 bucket access logging is enabled on the CloudTrail S3 bucket"
+    severity: "high"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "BucketLoggingEnabled"
+        value: "false"
+
+  - name: "ensure CloudTrail logs are encrypted at rest using KMS CMKs"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "LogsEncrypted"
+        value: "false"
+
+  - name: "ensure rotation for customer created CMKs is enabled"
+    severity: "medium"
+    resource: kms:Key
+    filters:
+      - criterion: "KeyRotationEnabled"
+        value: "false"
+      - criterion: "CustomerManaged"
+        value: "true"
+
+  - name: "ensure no security groups allow ingress from 0.0.0.0/0 to port 22"
+    severity: "high"
+    resource: ec2:SecurityGroup
+    filters:
+      - criterion: "IngressProtocol"
+        comparison: "allows"
+        value: "TCP"
+      - criterion: "IngressPort"
+        comparison: "allows"
+        value: "22"
+      - criterion: "IngressIP"
+        comparison: "allows"
+        value: "0.0.0.0/0"
+
+  - name: "ensure no security groups allow ingress from 0.0.0.0/0 to port 3389"
+    severity: "high"
+    resource: ec2:SecurityGroup
+    filters:
+      - criterion: "IngressProtocol"
+        comparison: "allows"
+        value: "TCP"
+      - criterion: "IngressPort"
+        comparison: "allows"
+        value: "3389"
+      - criterion: "IngressIP"
+        comparison: "allows"
+        value: "0.0.0.0/0"
+
+  - name: "ensure VPC flow logging is enabled in all VPCs"
+    severity: "medium"
+    resource: ec2:Vpc
+    filters:
+      - criterion: "HasEnabledFlowLog"
+        value: "false"
+
+  - name: "ensure the default security group of every VPC restricts all traffic"
+    severity: "medium"
+    resource: ec2:SecurityGroup
+    filters:
+      - criterion: "GroupName"
+        comparison: "=="
+        value: "default"
+      - criterion: "HasAnyRules"
+        value: "true"
+
+  - name: "check for buckets with public access"
+    severity: "critical"
+    resource: s3:Bucket
+    filters:
+      - criterion: "AllowsPublicAccess"
+        value: "true"
+
+  - name: "ensure a log metric filter and alarm exist for unauthorized API calls"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForUnauthorizedAPICalls"
+        value: "false"
+
+  - name: "ensure a log metric filter and alarm exist for Management Console sign-in without MFA"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForConsoleSignInsWithoutMFA"
+        value: "false"
+
+  - name: "ensure a log metric filter and alarm exist for usage of root account"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForRootAccountUsage"
+        value: "false"
+
+  - name: "ensure a log metric filter and alarm exist for IAM policy changes"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForIAMPolicyChanges"
+        value: "false"
+
+  - name: "ensure a log metric filter and alarm exist for CloudTrail configuration changes"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForCloudTrailConfigChanges"
+        value: "false"
+
+  - name: "ensure a log metric filter and alarm exist for AWS Management Console authentication failures"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForAWSConsoleAuthFailures"
+        value: "false"
+
+  - name: "ensure a log metric filter and alarm exist for disabling or scheduled deletion of customer created CMKs"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForDisablingOrScheduledDeletionOfCMK"
+        value: "false"
+
+  - name: "ensure a log metric filter and alarm exist for S3 bucket policy changes"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForS3BucketPolicyChanges"
+        value: "false"
+
+  - name: "ensure a log metric filter and alarm exist for AWS Config configuration changes"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForConfigChanges"
+        value: "false"
+
+  - name: "ensure a log metric filter and alarm exist for security group changes"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForSecGroupChanges"
+        value: "false"
+
+  - name: "ensure a log metric filter and alarm exist for changes to Network Access Control Lists (NACL)"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForNACLChanges"
+        value: "false"
+
+  - name: "ensure a log metric filter and alarm exist for changes to network gateways"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForNetworkGatewayChanges"
+        value: "false"
+
+  - name: "ensure a log metric filter and alarm exist for route table changes"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForRouteTableChanges"
+        value: "false"
+
+  - name: "ensure a log metric filter and alarm exist for VPC changes"
+    severity: "medium"
+    resource: cloudtrail:Trail
+    filters:
+      - criterion: "HasAlarmWithSubscriberForVPCChanges"
+        value: "false"

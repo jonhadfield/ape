@@ -1,0 +1,67 @@
+---
+policies: ./policies.yml
+
+plays:
+   - name: "EBS public snapshots"
+     policies:
+       - ""
+   - name: "Amazon RDS Public Snapshots"
+     policies:
+       - ""
+   - name: "Amazon RDS Security Group Access Risk"
+     policies:
+       - ""
+   - name: "Amazon Route 53 MX Resource Record Sets and Sender Policy Framework"
+     policies:
+       - ""
+   - name: "Amazon S3 Bucket Permissions"
+     policies:
+       - ""
+   - name: "AWS CloudTrail Logging"
+     policies:
+       - ""
+   - name: "CloudFront Custom SSL Certificates in the IAM Certificate Store"
+     policies:
+       - ""
+   - name: "CloudFront SSL Certificate on the Origin Server"
+     policies:
+       - ""
+   - name: "ELB Listener Security"
+     policies:
+       - ""
+   - name: "ELB Security Groups"
+     policies:
+       - ""
+   - name: "Exposed Access Keys"
+     policies:
+       - ""
+   - name: "IAM Access Key Rotation"
+     policies:
+       - ""
+   - name: "IAM Password Policy"
+     policies:
+       - ""
+   - name: "IAM Use"
+     policies:
+       - ""
+   - name: "EBS public snapshots"
+     policies:
+       - ""
+   - name: "MFA on Root Account"
+     policies:
+       - ""
+   - name: "Security Groups - Specific Ports Unrestricted"
+     policies:
+       - ""
+   - name: "Security Groups - Unrestricted Access"
+     policies:
+       - ""
+
+
+
+
+
+
+
+
+

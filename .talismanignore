@@ -1,0 +1,7 @@
+README.md
+helpers/catalogue.go
+cloudtrail.go
+vendor/
+presets-files/
+Gopkg.lock
+Gopkg.toml

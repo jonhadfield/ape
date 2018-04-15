@@ -1,0 +1,42 @@
+# Binaries for programs and plugins
+ape_darwin_amd64
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+coverage.txt
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
+.glide/
+
+# Built binary
+ape
+# But not the source directory
+!cmd/ape
+
+# Ape configs
+playbook*.yml
+accounts*.yml
+policies*.yml
+
+# Ape presets
+!presets-files/*/*.yml
+
+# Excel output
+*.xlsx
+
+# Backups
+*.bkp
+
+# Test binaries
+playbook_multiple
+playbook_single
+
+# Local build
+.local_dist/ape*
