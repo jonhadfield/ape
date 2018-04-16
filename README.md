@@ -47,7 +47,7 @@ $ ape --run-preset=cis-foundations
 
 ### the basics
 
-ape runs **playbook** files containing a list of tasks called **plays**. Each **play** defines one or more **policies** to run, and it's the policies that tell ape how to issues, through the use of **filters**.
+ape runs **playbook** files containing a list of tasks called **plays**. Each **play** defines one or more **policies** to run, and it's the policies that tell ape how to find issues through the use of **filters**.
 All of these are defined using a simple markup language called [YAML](http://yaml.org/).
 
 #### playbook
