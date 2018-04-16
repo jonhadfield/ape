@@ -23,12 +23,9 @@ import (
 
 	. "github.com/jonhadfield/ape/mocks"
 
-	syslog "github.com/RackSec/srslog"
 	h "github.com/jonhadfield/ape/helpers"
 	"github.com/jonhadfield/ape/root"
 	. "github.com/smartystreets/goconvey/convey"
-
-	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/iam"
 )
@@ -253,13 +250,6 @@ func TestFilterHasManagedPolicyAttached(t *testing.T) {
 func TestEnforcePasswordPolicy(t *testing.T) {
 
 	var err error
-	var sysLogger *syslog.Writer
-	sysLogger, err = syslog.Dial("", "", syslog.LOG_DEBUG, "ape")
-	var l []interface{}
-	l = append(l, sysLogger)
-	if err != nil {
-		fmt.Println(err)
-	}
 	mockSvc := &MockIAMClient{}
 	filter := root.Filter{
 		Criterion:  "MinimumPasswordLength",
@@ -286,7 +276,7 @@ func TestEnforcePasswordPolicy(t *testing.T) {
 	}
 	var result enforcePolicyOutput
 
-	result, err = enforcePasswordPolicy(l, mockSvc, planItem)
+	result, err = enforcePasswordPolicy(nil, mockSvc, planItem)
 	if err != nil {
 		t.Error("EnforcePasswordPolicy returned an error")
 	}
