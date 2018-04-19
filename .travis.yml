@@ -21,3 +21,4 @@ os:
 
 script:
   - base=$(echo $PWD | sed "s|$GOPATH/src/||") && go test -race -v $(go list ./... | grep -v vendor | sed "s|$base/|./|")
+  - $GOPATH/bin/goveralls -service=travis-ci
