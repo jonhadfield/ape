@@ -76,6 +76,9 @@ build-all: fmt data
 install:
 	go install ./cmd/...
 
+bintray:
+	curl -T .local_dist/ape_linux_amd64 -ujonhadfield:$(BINTRAY_APIKEY) https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_linux_amd64
+
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
