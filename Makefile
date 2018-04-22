@@ -77,14 +77,14 @@ install:
 	go install ./cmd/...
 
 bintray:
-	curl -0 -T .local_dist/ape_darwin_amd64 -ujonhadfield:$(BINTRAY_APIKEY) https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_darwin_amd64
-	curl -0 -T .local_dist/ape_linux_amd64 -ujonhadfield:$(BINTRAY_APIKEY) https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_linux_amd64
-	curl -0 -T .local_dist/ape_linux_arm -ujonhadfield:$(BINTRAY_APIKEY) https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_linux_arm
-	curl -0 -T .local_dist/ape_linux_arm64 -ujonhadfield:$(BINTRAY_APIKEY) https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_linux_arm64
-	curl -0 -T .local_dist/ape_netbsd_amd64 -ujonhadfield:$(BINTRAY_APIKEY) https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_netbsd_amd64
-	curl -0 -T .local_dist/ape_openbsd_amd64 -ujonhadfield:$(BINTRAY_APIKEY) https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_openbsd_amd64
-	curl -0 -T .local_dist/ape_freebsd_amd64 -ujonhadfield:$(BINTRAY_APIKEY) https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_freebsd_amd64
-	curl -0 -XPOST -ujonhadfield:$(BINTRAY_APIKEY) https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/publish
+	curl -X PUT -0 -T .local_dist/ape_darwin_amd64 -ujonhadfield:$(BINTRAY_APIKEY) "https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_darwin_amd64;bt_package=ape;bt_version=$(BUILD_TAG);publish=1"
+	curl -X PUT -0 -T .local_dist/ape_linux_amd64 -ujonhadfield:$(BINTRAY_APIKEY) "https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_linux_amd64;bt_package=ape;bt_version=$(BUILD_TAG);publish=1"
+	curl -X PUT -0 -T .local_dist/ape_linux_arm -ujonhadfield:$(BINTRAY_APIKEY) "https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_linux_arm;bt_package=ape;bt_version=$(BUILD_TAG);publish=1"
+	curl -X PUT -0 -T .local_dist/ape_linux_arm64 -ujonhadfield:$(BINTRAY_APIKEY) "https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_linux_arm64;bt_package=ape;bt_version=$(BUILD_TAG);publish=1"
+	curl -X PUT -0 -T .local_dist/ape_netbsd_amd64 -ujonhadfield:$(BINTRAY_APIKEY) "https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_netbsd_amd64;bt_package=ape;bt_version=$(BUILD_TAG);publish=1"
+	curl -X PUT -0 -T .local_dist/ape_openbsd_amd64 -ujonhadfield:$(BINTRAY_APIKEY) "https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_openbsd_amd64;bt_package=ape;bt_version=$(BUILD_TAG);publish=1"
+	curl -X PUT -0 -T .local_dist/ape_freebsd_amd64 -ujonhadfield:$(BINTRAY_APIKEY) "https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/ape_freebsd_amd64;bt_package=ape;bt_version=$(BUILD_TAG);publish=1"
+	curl -XPOST -0 -ujonhadfield:$(BINTRAY_APIKEY) https://api.bintray.com/content/jonhadfield/ape/ape/$(BUILD_TAG)/publish
 
 release: build-all bintray wait-for-publish build-docker release-docker
 
@@ -92,8 +92,8 @@ wait-for-publish:
 	sleep 120
 
 build-docker:
-	cd docker ; docker build -t quay.io/jonhadfield/ape:$(BUILD_TAG) .
-	cd docker ; docker build -t quay.io/jonhadfield/ape:latest .
+	cd docker ; docker build --no-cache -t quay.io/jonhadfield/ape:$(BUILD_TAG) .
+	cd docker ; docker build --no-cache -t quay.io/jonhadfield/ape:latest .
 
 release-docker:
 	cd docker ; docker push quay.io/jonhadfield/ape:$(BUILD_TAG)
