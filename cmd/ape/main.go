@@ -79,7 +79,7 @@ var (
 	listPresets         = kingpin.Flag("list-presets", "list available presets").Bool()
 	generatePreset      = kingpin.Flag("generate-preset", "generate playbook and policies from presets-files").String()
 	runPreset           = kingpin.Flag("run-preset", "run a preset").String()
-	accessKeyId         = kingpin.Flag("access-key-id", "aws credential: access key id").String()
+	accessKeyID         = kingpin.Flag("access-key-id", "aws credential: access key id").String()
 	secretAccessKey     = kingpin.Flag("secret-access-key", "aws credential: secret access key").String()
 	sessionToken        = kingpin.Flag("session-token", "aws credential: session token").String()
 )
@@ -284,7 +284,7 @@ func main() {
 		LogLevel:         *logLevel,
 		Output:           *output,
 		Regions:          selectedRegions,
-		AccessKeyId:      *accessKeyId,
+		AccessKeyID:      *accessKeyID,
 		SecretAccessKey:  *secretAccessKey,
 		SessionToken:     *sessionToken,
 	}

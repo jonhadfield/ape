@@ -352,9 +352,9 @@ func (p plan) Enforce(l []interface{}, input EnforcePlanInput) (failures bool, e
 	var planOutput enforcePlanOutput
 	var initialSess *session.Session
 	var staticCreds *credentials.Credentials
-	if input.Args.AccessKeyId != "" && input.Args.SecretAccessKey != "" {
+	if input.Args.AccessKeyID != "" && input.Args.SecretAccessKey != "" {
 		// use credentials specified on command line
-		staticCreds = credentials.NewStaticCredentials(input.Args.AccessKeyId,
+		staticCreds = credentials.NewStaticCredentials(input.Args.AccessKeyID,
 			input.Args.SecretAccessKey, input.Args.SessionToken)
 		initialSess, err = session.NewSession(&aws.Config{Credentials: staticCreds})
 	} else {

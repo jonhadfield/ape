@@ -28,7 +28,7 @@ type CommandLineArgs struct {
 	Output           string
 	Order            string
 	LogLevel         string
-	AccessKeyId      string
+	AccessKeyID      string
 	SecretAccessKey  string
 	SessionToken     string
 }
