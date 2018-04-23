@@ -93,7 +93,7 @@ wait-for-publish:
 
 build-docker:
 	cd docker ; docker build --no-cache -t quay.io/jonhadfield/ape:$(BUILD_TAG) .
-	cd docker ; docker build --no-cache -t quay.io/jonhadfield/ape:latest .
+	cd docker ; docker tag quay.io/jonhadfield/ape:$(BUILD_TAG) quay.io/jonhadfield/ape:latest
 
 release-docker:
 	cd docker ; docker push quay.io/jonhadfield/ape:$(BUILD_TAG)
