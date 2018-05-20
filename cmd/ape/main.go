@@ -71,7 +71,7 @@ var (
 	silent              = kingpin.Flag("silent", "suppress all output").Bool()
 	logLevel            = kingpin.Flag("log-level", "debug, info, notice, warn, error, critical").Default("warn").String()
 	logFile             = kingpin.Flag("log-file", "log to filepath").String()
-	syslog              = kingpin.Flag("syslog", "log to syslog").String()
+	syslog              = kingpin.Flag("syslog", "log to syslog").Bool()
 	verboseErrors       = kingpin.Flag("verbose-errors", "output class and line number with error messages").Bool()
 	listSupported       = kingpin.Flag("list-supported", "list supported services and resources").Bool()
 	output              = kingpin.Flag("output", "lines, table, or none").Default("lines").String()
@@ -239,7 +239,7 @@ func main() {
 
 	var loggers []interface{}
 
-	if *syslog != "" {
+	if *syslog {
 		sysLogger, err = getSysLogger(*logLevel)
 		if err != nil {
 			err = errors.New("failed to get syslog logger")
