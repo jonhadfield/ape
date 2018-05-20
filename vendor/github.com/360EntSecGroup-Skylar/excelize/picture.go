@@ -52,24 +52,34 @@ func parseFormatPictureSet(formatSet string) *formatPicture {
 //        if err != nil {
 //            fmt.Println(err)
 //        }
-//        // Insert a picture to sheet with scaling.
-//        err = xlsx.AddPicture("Sheet1", "D2", "./image1.png", `{"x_scale": 0.5, "y_scale": 0.5}`)
+//        // Insert a picture scaling in the cell with location hyperlink.
+//        err = xlsx.AddPicture("Sheet1", "D2", "./image1.png", `{"x_scale": 0.5, "y_scale": 0.5, "hyperlink": "#Sheet2!D8", "hyperlink_type": "Location"}`)
 //        if err != nil {
 //            fmt.Println(err)
 //        }
-//        // Insert a picture offset in the cell with printing support.
-//        err = xlsx.AddPicture("Sheet1", "H2", "./image3.gif", `{"x_offset": 15, "y_offset": 10, "print_obj": true, "lock_aspect_ratio": false, "locked": false}`)
+//        // Insert a picture offset in the cell with external hyperlink, printing and positioning support.
+//        err = xlsx.AddPicture("Sheet1", "H2", "./image3.gif", `{"x_offset": 15, "y_offset": 10, "hyperlink": "https://github.com/360EntSecGroup-Skylar/excelize", "hyperlink_type": "External", "print_obj": true, "lock_aspect_ratio": false, "locked": false, "positioning": "oneCell"}`)
 //        if err != nil {
 //            fmt.Println(err)
 //        }
-//        err = xlsx.SaveAs("./Workbook.xlsx")
+//        err = xlsx.SaveAs("./Book1.xlsx")
 //        if err != nil {
 //            fmt.Println(err)
 //        }
 //    }
 //
+// LinkType defines two types of hyperlink "External" for web site or
+// "Location" for moving to one of cell in this workbook. When the
+// "hyperlink_type" is "Location", coordinates need to start with "#".
+//
+// Positioning defines two types of the position of a picture in an Excel
+// spreadsheet, "oneCell" (Move but don't size with cells) or "absolute"
+// (Don't move or size with cells). If you don't set this parameter, default
+// positioning is move and size with cells.
 func (f *File) AddPicture(sheet, cell, picture, format string) error {
 	var err error
+	var drawingHyperlinkRID int
+	var hyperlinkType string
 	// Check picture exists first.
 	if _, err = os.Stat(picture); os.IsNotExist(err) {
 		return err
@@ -89,8 +99,15 @@ func (f *File) AddPicture(sheet, cell, picture, format string) error {
 	pictureID := f.countMedia() + 1
 	drawingXML := "xl/drawings/drawing" + strconv.Itoa(drawingID) + ".xml"
 	drawingID, drawingXML = f.prepareDrawing(xlsx, drawingID, sheet, drawingXML)
-	drawingRID := f.addDrawingRelationships(drawingID, SourceRelationshipImage, "../media/image"+strconv.Itoa(pictureID)+ext)
-	f.addDrawingPicture(sheet, drawingXML, cell, file, image.Width, image.Height, drawingRID, formatSet)
+	drawingRID := f.addDrawingRelationships(drawingID, SourceRelationshipImage, "../media/image"+strconv.Itoa(pictureID)+ext, hyperlinkType)
+	// Add picture with hyperlink.
+	if formatSet.Hyperlink != "" && formatSet.HyperlinkType != "" {
+		if formatSet.HyperlinkType == "External" {
+			hyperlinkType = formatSet.HyperlinkType
+		}
+		drawingHyperlinkRID = f.addDrawingRelationships(drawingID, SourceRelationshipHyperLink, formatSet.Hyperlink, hyperlinkType)
+	}
+	f.addDrawingPicture(sheet, drawingXML, cell, file, image.Width, image.Height, drawingRID, drawingHyperlinkRID, formatSet)
 	f.addMedia(picture, ext)
 	f.addContentTypePart(drawingID, "drawings")
 	return err
@@ -125,7 +142,7 @@ func (f *File) addSheetRelationships(sheet, relType, target, targetMode string) 
 		TargetMode: targetMode,
 	})
 	output, _ := xml.Marshal(sheetRels)
-	f.saveFileList(rels, string(output))
+	f.saveFileList(rels, output)
 	return rID
 }
 
@@ -146,7 +163,7 @@ func (f *File) deleteSheetRelationships(sheet, rID string) {
 		}
 	}
 	output, _ := xml.Marshal(sheetRels)
-	f.saveFileList(rels, string(output))
+	f.saveFileList(rels, output)
 }
 
 // addSheetLegacyDrawing provides function to add legacy drawing element to
@@ -191,7 +208,7 @@ func (f *File) countDrawings() int {
 // addDrawingPicture provides function to add picture by given sheet,
 // drawingXML, cell, file name, width, height relationship index and format
 // sets.
-func (f *File) addDrawingPicture(sheet, drawingXML, cell, file string, width, height, rID int, formatSet *formatPicture) {
+func (f *File) addDrawingPicture(sheet, drawingXML, cell, file string, width, height, rID, hyperlinkRID int, formatSet *formatPicture) {
 	cell = strings.ToUpper(cell)
 	fromCol := string(strings.Map(letterOnlyMapF, cell))
 	fromRow, _ := strconv.Atoi(strings.Map(intOnlyMapF, cell))
@@ -205,7 +222,7 @@ func (f *File) addDrawingPicture(sheet, drawingXML, cell, file string, width, he
 	content.Xdr = NameSpaceDrawingMLSpreadSheet
 	cNvPrID := f.drawingParser(drawingXML, &content)
 	twoCellAnchor := xdrCellAnchor{}
-	twoCellAnchor.EditAs = "oneCell"
+	twoCellAnchor.EditAs = formatSet.Positioning
 	from := xlsxFrom{}
 	from.Col = colStart
 	from.ColOff = formatSet.OffsetX * EMU
@@ -223,6 +240,12 @@ func (f *File) addDrawingPicture(sheet, drawingXML, cell, file string, width, he
 	pic.NvPicPr.CNvPr.ID = f.countCharts() + f.countMedia() + 1
 	pic.NvPicPr.CNvPr.Descr = file
 	pic.NvPicPr.CNvPr.Name = "Picture " + strconv.Itoa(cNvPrID)
+	if hyperlinkRID != 0 {
+		pic.NvPicPr.CNvPr.HlinkClick = &xlsxHlinkClick{
+			R:   SourceRelationship,
+			RID: "rId" + strconv.Itoa(hyperlinkRID),
+		}
+	}
 	pic.BlipFill.Blip.R = SourceRelationship
 	pic.BlipFill.Blip.Embed = "rId" + strconv.Itoa(rID)
 	pic.SpPr.PrstGeom.Prst = "rect"
@@ -234,13 +257,13 @@ func (f *File) addDrawingPicture(sheet, drawingXML, cell, file string, width, he
 	}
 	content.TwoCellAnchor = append(content.TwoCellAnchor, &twoCellAnchor)
 	output, _ := xml.Marshal(content)
-	f.saveFileList(drawingXML, string(output))
+	f.saveFileList(drawingXML, output)
 }
 
 // addDrawingRelationships provides function to add image part relationships in
 // the file xl/drawings/_rels/drawing%d.xml.rels by given drawing index,
 // relationship type and target.
-func (f *File) addDrawingRelationships(index int, relType, target string) int {
+func (f *File) addDrawingRelationships(index int, relType, target, targetMode string) int {
 	var rels = "xl/drawings/_rels/drawing" + strconv.Itoa(index) + ".xml.rels"
 	var drawingRels xlsxWorkbookRels
 	var rID = 1
@@ -256,12 +279,13 @@ func (f *File) addDrawingRelationships(index int, relType, target string) int {
 		ID.WriteString(strconv.Itoa(rID))
 	}
 	drawingRels.Relationships = append(drawingRels.Relationships, xlsxWorkbookRelation{
-		ID:     ID.String(),
-		Type:   relType,
-		Target: target,
+		ID:         ID.String(),
+		Type:       relType,
+		Target:     target,
+		TargetMode: targetMode,
 	})
 	output, _ := xml.Marshal(drawingRels)
-	f.saveFileList(rels, string(output))
+	f.saveFileList(rels, output)
 	return rID
 }
 
@@ -283,7 +307,7 @@ func (f *File) addMedia(file, ext string) {
 	count := f.countMedia()
 	dat, _ := ioutil.ReadFile(file)
 	media := "xl/media/image" + strconv.Itoa(count+1) + ext
-	f.XLSX[media] = string(dat)
+	f.XLSX[media] = dat
 }
 
 // setContentTypePartImageExtensions provides function to set the content type
@@ -383,7 +407,7 @@ func (f *File) getSheetRelationshipsTargetByID(sheet, rID string) string {
 // in XLSX by given worksheet and cell name. This function returns the file name
 // in XLSX and file contents as []byte data types. For example:
 //
-//    xlsx, err := excelize.OpenFile("./Workbook.xlsx")
+//    xlsx, err := excelize.OpenFile("./Book1.xlsx")
 //    if err != nil {
 //        fmt.Println(err)
 //        return

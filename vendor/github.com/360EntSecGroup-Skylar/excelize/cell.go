@@ -3,6 +3,7 @@ package excelize
 import (
 	"encoding/xml"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -39,13 +40,41 @@ func (f *File) mergeCellsParser(xlsx *xlsxWorksheet, axis string) string {
 //    float64
 //    string
 //    []byte
+//    time.Duration
 //    time.Time
+//    bool
 //    nil
 //
 // Note that default date format is m/d/yy h:mm of time.Time type value. You can
 // set numbers format by SetCellStyle() method.
 func (f *File) SetCellValue(sheet, axis string, value interface{}) {
 	switch t := value.(type) {
+	case float32:
+		f.SetCellDefault(sheet, axis, strconv.FormatFloat(float64(value.(float32)), 'f', -1, 32))
+	case float64:
+		f.SetCellDefault(sheet, axis, strconv.FormatFloat(float64(value.(float64)), 'f', -1, 64))
+	case string:
+		f.SetCellStr(sheet, axis, t)
+	case []byte:
+		f.SetCellStr(sheet, axis, string(t))
+	case time.Duration:
+		f.SetCellDefault(sheet, axis, strconv.FormatFloat(float64(value.(time.Duration).Seconds()/86400), 'f', -1, 32))
+		f.setDefaultTimeStyle(sheet, axis, 21)
+	case time.Time:
+		f.SetCellDefault(sheet, axis, strconv.FormatFloat(float64(timeToExcelTime(timeToUTCTime(value.(time.Time)))), 'f', -1, 64))
+		f.setDefaultTimeStyle(sheet, axis, 22)
+	case nil:
+		f.SetCellStr(sheet, axis, "")
+	case bool:
+		f.SetCellBool(sheet, axis, bool(value.(bool)))
+	default:
+		f.setCellIntValue(sheet, axis, value)
+	}
+}
+
+// setCellIntValue provides function to set int value of a cell.
+func (f *File) setCellIntValue(sheet, axis string, value interface{}) {
+	switch value.(type) {
 	case int:
 		f.SetCellInt(sheet, axis, value.(int))
 	case int8:
@@ -66,21 +95,36 @@ func (f *File) SetCellValue(sheet, axis string, value interface{}) {
 		f.SetCellInt(sheet, axis, int(value.(uint32)))
 	case uint64:
 		f.SetCellInt(sheet, axis, int(value.(uint64)))
-	case float32:
-		f.SetCellDefault(sheet, axis, strconv.FormatFloat(float64(value.(float32)), 'f', -1, 32))
-	case float64:
-		f.SetCellDefault(sheet, axis, strconv.FormatFloat(float64(value.(float64)), 'f', -1, 64))
-	case string:
-		f.SetCellStr(sheet, axis, t)
-	case []byte:
-		f.SetCellStr(sheet, axis, string(t))
-	case time.Time:
-		f.SetCellDefault(sheet, axis, strconv.FormatFloat(float64(timeToExcelTime(timeToUTCTime(value.(time.Time)))), 'f', -1, 64))
-		f.setDefaultTimeStyle(sheet, axis)
-	case nil:
-		f.SetCellStr(sheet, axis, "")
 	default:
 		f.SetCellStr(sheet, axis, fmt.Sprintf("%v", value))
+	}
+}
+
+// SetCellBool provides function to set bool type value of a cell by given
+// worksheet name, cell coordinates and cell value.
+func (f *File) SetCellBool(sheet, axis string, value bool) {
+	xlsx := f.workSheetReader(sheet)
+	axis = f.mergeCellsParser(xlsx, axis)
+	col := string(strings.Map(letterOnlyMapF, axis))
+	row, err := strconv.Atoi(strings.Map(intOnlyMapF, axis))
+	if err != nil {
+		return
+	}
+	xAxis := row - 1
+	yAxis := TitleToNumber(col)
+
+	rows := xAxis + 1
+	cell := yAxis + 1
+
+	completeRow(xlsx, rows, cell)
+	completeCol(xlsx, rows, cell)
+
+	xlsx.SheetData.Row[xAxis].C[yAxis].S = f.prepareCellStyle(xlsx, cell, xlsx.SheetData.Row[xAxis].C[yAxis].S)
+	xlsx.SheetData.Row[xAxis].C[yAxis].T = "b"
+	if value {
+		xlsx.SheetData.Row[xAxis].C[yAxis].V = "1"
+	} else {
+		xlsx.SheetData.Row[xAxis].C[yAxis].V = "0"
 	}
 }
 
@@ -440,30 +484,64 @@ func (f *File) SetCellDefault(sheet, axis, value string) {
 	xlsx.SheetData.Row[xAxis].C[yAxis].V = value
 }
 
-// checkCellInArea provides function to determine if a given coordinate is
-// within an area.
-func checkCellInArea(cell, area string) bool {
-	result := false
-	cell = strings.ToUpper(cell)
-	col := string(strings.Map(letterOnlyMapF, cell))
-	row, _ := strconv.Atoi(strings.Map(intOnlyMapF, cell))
+// SetSheetRow writes an array to row by given worksheet name, starting
+// coordinate and a pointer to array type 'slice'. For example, writes an
+// array to row 6 start with the cell B6 on Sheet1:
+//
+//     xlsx.SetSheetRow("Sheet1", "B6", &[]interface{}{"1", nil, 2})
+//
+func (f *File) SetSheetRow(sheet, axis string, slice interface{}) {
+	xlsx := f.workSheetReader(sheet)
+	axis = f.mergeCellsParser(xlsx, axis)
+	col := string(strings.Map(letterOnlyMapF, axis))
+	row, err := strconv.Atoi(strings.Map(intOnlyMapF, axis))
+	if err != nil {
+		return
+	}
+	// Make sure 'slice' is a Ptr to Slice
+	v := reflect.ValueOf(slice)
+	if v.Kind() != reflect.Ptr {
+		return
+	}
+	v = v.Elem()
+	if v.Kind() != reflect.Slice {
+		return
+	}
+
 	xAxis := row - 1
 	yAxis := TitleToNumber(col)
 
+	rows := xAxis + 1
+	cell := yAxis + 1
+
+	completeRow(xlsx, rows, cell)
+	completeCol(xlsx, rows, cell)
+
+	idx := 0
+	for i := cell - 1; i < v.Len()+cell-1; i++ {
+		c := ToAlphaString(i) + strconv.Itoa(row)
+		f.SetCellValue(sheet, c, v.Index(idx).Interface())
+		idx++
+	}
+}
+
+// checkCellInArea provides function to determine if a given coordinate is
+// within an area.
+func checkCellInArea(cell, area string) bool {
+	cell = strings.ToUpper(cell)
+	area = strings.ToUpper(area)
+
 	ref := strings.Split(area, ":")
-	hCol := string(strings.Map(letterOnlyMapF, ref[0]))
-	hRow, _ := strconv.Atoi(strings.Map(intOnlyMapF, ref[0]))
-	hyAxis := hRow - 1
-	hxAxis := TitleToNumber(hCol)
-
-	vCol := string(strings.Map(letterOnlyMapF, ref[1]))
-	vRow, _ := strconv.Atoi(strings.Map(intOnlyMapF, ref[1]))
-	vyAxis := vRow - 1
-	vxAxis := TitleToNumber(vCol)
-
-	if hxAxis <= yAxis && yAxis <= vxAxis && hyAxis <= xAxis && xAxis <= vyAxis {
-		result = true
+	if len(ref) < 2 {
+		return false
 	}
 
-	return result
+	from := ref[0]
+	to := ref[1]
+
+	col, row := getCellColRow(cell)
+	fromCol, fromRow := getCellColRow(from)
+	toCol, toRow := getCellColRow(to)
+
+	return axisLowerOrEqualThan(fromCol, col) && axisLowerOrEqualThan(col, toCol) && axisLowerOrEqualThan(fromRow, row) && axisLowerOrEqualThan(row, toRow)
 }

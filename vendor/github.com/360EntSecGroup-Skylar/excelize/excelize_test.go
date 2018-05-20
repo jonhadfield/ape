@@ -6,6 +6,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io/ioutil"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -14,9 +15,9 @@ import (
 
 func TestOpenFile(t *testing.T) {
 	// Test update a XLSX file.
-	xlsx, err := OpenFile("./test/Workbook1.xlsx")
+	xlsx, err := OpenFile("./test/Book1.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	// Test get all the rows in a not exists worksheet.
 	rows := xlsx.GetRows("Sheet4")
@@ -81,8 +82,25 @@ func TestOpenFile(t *testing.T) {
 	xlsx.SetCellValue("Sheet2", "F14", uint32(1<<32-1))
 	xlsx.SetCellValue("Sheet2", "F15", uint64(1<<32-1))
 	xlsx.SetCellValue("Sheet2", "F16", true)
+	// Test boolean write
+	booltest := []struct {
+		value    bool
+		expected string
+	}{
+		{false, "0"},
+		{true, "1"},
+	}
+	for _, test := range booltest {
+		xlsx.SetCellValue("Sheet2", "F16", test.value)
+		value := xlsx.GetCellValue("Sheet2", "F16")
+		if value != test.expected {
+			t.Errorf(`Expecting result of xlsx.SetCellValue("Sheet2", "F16", %v) to be %v (false), got: %s `, test.value, test.expected, value)
+		}
+	}
 	xlsx.SetCellValue("Sheet2", "G2", nil)
 	xlsx.SetCellValue("Sheet2", "G4", time.Now())
+	// 02:46:40
+	xlsx.SetCellValue("Sheet2", "G5", time.Duration(1e13))
 	// Test completion column.
 	xlsx.SetCellValue("Sheet2", "M2", nil)
 	// Test read cell value with given axis large than exists row.
@@ -111,34 +129,34 @@ func TestOpenFile(t *testing.T) {
 }
 
 func TestAddPicture(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook1.xlsx")
+	xlsx, err := OpenFile("./test/Book1.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
-	// Test add picture to sheet.
-	err = xlsx.AddPicture("Sheet2", "I9", "./test/images/excel.jpg", `{"x_offset": 140, "y_offset": 120}`)
+	// Test add picture to worksheet with offset and location hyperlink.
+	err = xlsx.AddPicture("Sheet2", "I9", "./test/images/excel.jpg", `{"x_offset": 140, "y_offset": 120, "hyperlink": "#Sheet2!D8", "hyperlink_type": "Location"}`)
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
-	// Test add picture to sheet with offset.
-	err = xlsx.AddPicture("Sheet1", "F21", "./test/images/excel.png", `{"x_offset": 10, "y_offset": 10}`)
+	// Test add picture to worksheet with offset, external hyperlink and positioning.
+	err = xlsx.AddPicture("Sheet1", "F21", "./test/images/excel.png", `{"x_offset": 10, "y_offset": 10, "hyperlink": "https://github.com/360EntSecGroup-Skylar/excelize", "hyperlink_type": "External", "positioning": "oneCell"}`)
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
-	// Test add picture to sheet with invalid file path.
+	// Test add picture to worksheet with invalid file path.
 	err = xlsx.AddPicture("Sheet1", "G21", "./test/images/excel.icon", "")
 	if err != nil {
 		t.Log(err)
 	}
-	// Test add picture to sheet with unsupport file type.
-	err = xlsx.AddPicture("Sheet1", "G21", "./test/Workbook1.xlsx", "")
+	// Test add picture to worksheet with unsupport file type.
+	err = xlsx.AddPicture("Sheet1", "G21", "./test/Book1.xlsx", "")
 	if err != nil {
 		t.Log(err)
 	}
 	// Test write file to given path.
-	err = xlsx.SaveAs("./test/Workbook_2.xlsx")
+	err = xlsx.SaveAs("./test/Book2.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
@@ -150,7 +168,7 @@ func TestBrokenFile(t *testing.T) {
 		t.Log(err)
 	}
 	// Test write file with broken file struct with given path.
-	err = xlsx.SaveAs("./test/Workbook_3.xlsx")
+	err = xlsx.SaveAs("./test/Book3.xlsx")
 	if err != nil {
 		t.Log(err)
 	}
@@ -164,7 +182,7 @@ func TestBrokenFile(t *testing.T) {
 	}
 
 	// Test open a XLSX file with given illegal path.
-	_, err = OpenFile("./test/Workbook.xlsx")
+	_, err = OpenFile("./test/Book.xlsx")
 	if err != nil {
 		t.Log(err)
 	}
@@ -173,23 +191,24 @@ func TestBrokenFile(t *testing.T) {
 func TestNewFile(t *testing.T) {
 	// Test create a XLSX file.
 	xlsx := NewFile()
+	xlsx.NewSheet("Sheet1")
 	xlsx.NewSheet("XLSXSheet2")
 	xlsx.NewSheet("XLSXSheet3")
 	xlsx.SetCellInt("XLSXSheet2", "A23", 56)
 	xlsx.SetCellStr("Sheet1", "B20", "42")
 	xlsx.SetActiveSheet(0)
-	// Test add picture to sheet with scaling.
-	err := xlsx.AddPicture("Sheet1", "H2", "./test/images/excel.gif", `{"x_scale": 0.5, "y_scale": 0.5}`)
+	// Test add picture to sheet with scaling and positioning.
+	err := xlsx.AddPicture("Sheet1", "H2", "./test/images/excel.gif", `{"x_scale": 0.5, "y_scale": 0.5, "positioning": "absolute"}`)
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	err = xlsx.AddPicture("Sheet1", "C2", "./test/images/excel.png", "")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
-	err = xlsx.SaveAs("./test/Workbook_3.xlsx")
+	err = xlsx.SaveAs("./test/Book3.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
@@ -199,28 +218,28 @@ func TestColWidth(t *testing.T) {
 	xlsx.SetColWidth("Sheet1", "A", "B", 12)
 	xlsx.GetColWidth("Sheet1", "A")
 	xlsx.GetColWidth("Sheet1", "C")
-	err := xlsx.SaveAs("./test/Workbook_4.xlsx")
+	err := xlsx.SaveAs("./test/Book4.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	convertRowHeightToPixels(0)
 }
 
 func TestRowHeight(t *testing.T) {
 	xlsx := NewFile()
-	xlsx.SetRowHeight("Sheet1", 0, 50)
-	xlsx.SetRowHeight("Sheet1", 3, 90)
+	xlsx.SetRowHeight("Sheet1", 1, 50)
+	xlsx.SetRowHeight("Sheet1", 4, 90)
 	t.Log(xlsx.GetRowHeight("Sheet1", 1))
-	t.Log(xlsx.GetRowHeight("Sheet1", 3))
-	err := xlsx.SaveAs("./test/Workbook_5.xlsx")
+	t.Log(xlsx.GetRowHeight("Sheet1", 0))
+	err := xlsx.SaveAs("./test/Book5.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	convertColWidthToPixels(0)
 }
 
 func TestSetCellHyperLink(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook1.xlsx")
+	xlsx, err := OpenFile("./test/Book1.xlsx")
 	if err != nil {
 		t.Log(err)
 	}
@@ -234,14 +253,14 @@ func TestSetCellHyperLink(t *testing.T) {
 	xlsx.SetCellHyperLink("Sheet2", "", "Sheet1!D60", "Location")
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestGetCellHyperLink(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook1.xlsx")
+	xlsx, err := OpenFile("./test/Book1.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	link, target := xlsx.GetCellHyperLink("Sheet1", "")
 	t.Log(link, target)
@@ -254,9 +273,9 @@ func TestGetCellHyperLink(t *testing.T) {
 }
 
 func TestSetCellFormula(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook1.xlsx")
+	xlsx, err := OpenFile("./test/Book1.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	xlsx.SetCellFormula("Sheet1", "B19", "SUM(Sheet2!D2,Sheet2!D11)")
 	xlsx.SetCellFormula("Sheet1", "C19", "SUM(Sheet2!D2,Sheet2!D9)")
@@ -264,41 +283,41 @@ func TestSetCellFormula(t *testing.T) {
 	xlsx.SetCellFormula("Sheet1", "C", "SUM(Sheet2!D2,Sheet2!D9)")
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestSetSheetBackground(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook1.xlsx")
+	xlsx, err := OpenFile("./test/Book1.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	err = xlsx.SetSheetBackground("Sheet2", "./test/images/background.png")
 	if err != nil {
 		t.Log(err)
 	}
-	err = xlsx.SetSheetBackground("Sheet2", "./test/Workbook1.xlsx")
+	err = xlsx.SetSheetBackground("Sheet2", "./test/Book1.xlsx")
 	if err != nil {
 		t.Log(err)
 	}
 	err = xlsx.SetSheetBackground("Sheet2", "./test/images/background.jpg")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	err = xlsx.SetSheetBackground("Sheet2", "./test/images/background.jpg")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestMergeCell(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook1.xlsx")
+	xlsx, err := OpenFile("./test/Book1.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	xlsx.MergeCell("Sheet1", "D9", "D9")
 	xlsx.MergeCell("Sheet1", "D9", "E9")
@@ -314,22 +333,23 @@ func TestMergeCell(t *testing.T) {
 	xlsx.SetCellHyperLink("Sheet1", "J11", "https://github.com/360EntSecGroup-Skylar/excelize", "External")
 	xlsx.SetCellFormula("Sheet1", "G12", "SUM(Sheet1!B19,Sheet1!C19)")
 	xlsx.GetCellValue("Sheet1", "H11")
+	xlsx.GetCellValue("Sheet2", "A6") // Merged cell ref is single coordinate.
 	xlsx.GetCellFormula("Sheet1", "G12")
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestSetCellStyleAlignment(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	var style int
 	style, err = xlsx.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":45,"vertical":"top","wrap_text":true}}`)
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	xlsx.SetCellStyle("Sheet1", "A22", "A22", style)
 	// Test set cell style with given illegal rows number.
@@ -339,14 +359,14 @@ func TestSetCellStyleAlignment(t *testing.T) {
 	xlsx.GetCellStyle("Sheet1", "A")
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestSetCellStyleBorder(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	var style int
 	// Test set border with invalid style parameter.
@@ -391,14 +411,14 @@ func TestSetCellStyleBorder(t *testing.T) {
 	xlsx.SetCellStyle("Sheet1", "O22", "O22", style)
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestSetCellStyleNumberFormat(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	// Test only set fill and number format for a cell.
 	col := []string{"L", "M", "N", "O", "P"}
@@ -430,14 +450,14 @@ func TestSetCellStyleNumberFormat(t *testing.T) {
 	xlsx.SetCellStyle("Sheet2", "L33", "L33", style)
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestSetCellStyleCurrencyNumberFormat(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_3.xlsx")
+	xlsx, err := OpenFile("./test/Book3.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	xlsx.SetCellValue("Sheet1", "A1", 56)
 	xlsx.SetCellValue("Sheet1", "A2", -32.3)
@@ -458,7 +478,7 @@ func TestSetCellStyleCurrencyNumberFormat(t *testing.T) {
 		t.Log(err)
 	}
 
-	xlsx, err = OpenFile("./test/Workbook_4.xlsx")
+	xlsx, err = OpenFile("./test/Book4.xlsx")
 	if err != nil {
 		t.Log(err)
 	}
@@ -488,7 +508,7 @@ func TestSetCellStyleCurrencyNumberFormat(t *testing.T) {
 
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
@@ -506,16 +526,16 @@ func TestSetCellStyleCustomNumberFormat(t *testing.T) {
 		t.Log(err)
 	}
 	xlsx.SetCellStyle("Sheet1", "A2", "A2", style)
-	err = xlsx.SaveAs("./test/Workbook_custom_number_format.xlsx")
+	err = xlsx.SaveAs("./test/Book_custom_number_format.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestSetCellStyleFill(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	var style int
 	// Test set fill for cell with invalid parameter.
@@ -545,14 +565,14 @@ func TestSetCellStyleFill(t *testing.T) {
 
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestSetCellStyleFont(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	var style int
 	style, err = xlsx.NewStyle(`{"font":{"bold":true,"italic":true,"family":"Berlin Sans FB Demi","size":36,"color":"#777777","underline":"single"}}`)
@@ -586,34 +606,51 @@ func TestSetCellStyleFont(t *testing.T) {
 	xlsx.SetCellStyle("Sheet2", "A5", "A5", style)
 	err = xlsx.Save()
 	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestSetCellStyleProtection(t *testing.T) {
+	xlsx, err := OpenFile("./test/Book2.xlsx")
+	if err != nil {
+		t.Error(err)
+	}
+	var style int
+	style, err = xlsx.NewStyle(`{"protection":{"hidden":true, "locked":true}}`)
+	if err != nil {
 		t.Log(err)
+	}
+	xlsx.SetCellStyle("Sheet2", "A6", "A6", style)
+	err = xlsx.Save()
+	if err != nil {
+		t.Error(err)
 	}
 }
 
 func TestSetDeleteSheet(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_3.xlsx")
+	xlsx, err := OpenFile("./test/Book3.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	xlsx.DeleteSheet("XLSXSheet3")
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
-	xlsx, err = OpenFile("./test/Workbook_4.xlsx")
+	xlsx, err = OpenFile("./test/Book4.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	xlsx.DeleteSheet("Sheet1")
 	xlsx.AddComment("Sheet1", "A1", `{"author":"Excelize: ","text":"This is a comment."}`)
-	err = xlsx.SaveAs("./test/Workbook_delete_sheet.xlsx")
+	err = xlsx.SaveAs("./test/Book_delete_sheet.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestGetPicture(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
 		t.Log(err)
 	}
@@ -642,9 +679,9 @@ func TestGetPicture(t *testing.T) {
 }
 
 func TestSheetVisibility(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	xlsx.SetSheetVisible("Sheet2", false)
 	xlsx.SetSheetVisible("Sheet1", false)
@@ -652,28 +689,28 @@ func TestSheetVisibility(t *testing.T) {
 	xlsx.GetSheetVisible("Sheet1")
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestRowVisibility(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	xlsx.SetRowVisible("Sheet3", 2, false)
 	xlsx.SetRowVisible("Sheet3", 2, true)
 	xlsx.GetRowVisible("Sheet3", 2)
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestColumnVisibility(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	xlsx.SetColVisible("Sheet1", "F", false)
 	xlsx.SetColVisible("Sheet1", "F", true)
@@ -681,19 +718,19 @@ func TestColumnVisibility(t *testing.T) {
 	xlsx.SetColVisible("Sheet3", "E", false)
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
-	xlsx, err = OpenFile("./test/Workbook_3.xlsx")
+	xlsx, err = OpenFile("./test/Book3.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	xlsx.GetColVisible("Sheet1", "B")
 }
 
 func TestCopySheet(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	err = xlsx.CopySheet(0, -1)
 	if err != nil {
@@ -710,28 +747,28 @@ func TestCopySheet(t *testing.T) {
 	}
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestAddTable(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	xlsx.AddTable("Sheet1", "B26", "A21", ``)
-	xlsx.AddTable("Sheet2", "A2", "B5", `{"table_style":"TableStyleMedium2", "show_first_column":true,"show_last_column":true,"show_row_stripes":false,"show_column_stripes":true}`)
+	xlsx.AddTable("Sheet2", "A2", "B5", `{"table_name":"table","table_style":"TableStyleMedium2", "show_first_column":true,"show_last_column":true,"show_row_stripes":false,"show_column_stripes":true}`)
 	xlsx.AddTable("Sheet2", "F1", "F1", `{"table_style":"TableStyleMedium8"}`)
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestAddShape(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	xlsx.AddShape("Sheet1", "A30", `{"type":"rect","paragraph":[{"text":"Rectangle","font":{"color":"CD5C5C"}},{"text":"Shape","font":{"bold":true,"color":"2980B9"}}]}`)
 	xlsx.AddShape("Sheet1", "B30", `{"type":"rect","paragraph":[{"text":"Rectangle"},{}]}`)
@@ -739,67 +776,58 @@ func TestAddShape(t *testing.T) {
 	xlsx.AddShape("Sheet3", "H1", `{"type":"ellipseRibbon", "color":{"line":"#4286f4","fill":"#8eb9ff"}, "paragraph":[{"font":{"bold":true,"italic":true,"family":"Berlin Sans FB Demi","size":36,"color":"#777777","underline":"single"}}], "height": 90}`)
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestAddComments(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	s := strings.Repeat("c", 32768)
 	xlsx.AddComment("Sheet1", "A30", `{"author":"`+s+`","text":"`+s+`"}`)
 	xlsx.AddComment("Sheet2", "B7", `{"author":"Excelize: ","text":"This is a comment."}`)
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestAutoFilter(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook_2.xlsx")
+	xlsx, err := OpenFile("./test/Book2.xlsx")
 	if err != nil {
+		t.Error(err)
+	}
+	formats := []string{``,
+		`{"column":"B","expression":"x != blanks"}`,
+		`{"column":"B","expression":"x == blanks"}`,
+		`{"column":"B","expression":"x != nonblanks"}`,
+		`{"column":"B","expression":"x == nonblanks"}`,
+		`{"column":"B","expression":"x <= 1 and x >= 2"}`,
+		`{"column":"B","expression":"x == 1 or x == 2"}`,
+		`{"column":"B","expression":"x == 1 or x == 2*"}`,
+		`{"column":"B","expression":"x <= 1 and x >= blanks"}`,
+		`{"column":"B","expression":"x -- y or x == *2*"}`,
+		`{"column":"B","expression":"x != y or x ? *2"}`,
+		`{"column":"B","expression":"x -- y o r x == *2"}`,
+		`{"column":"B","expression":"x -- y"}`,
+		`{"column":"A","expression":"x -- y"}`,
+	}
+	for _, format := range formats {
+		err = xlsx.AutoFilter("Sheet3", "D4", "B1", format)
 		t.Log(err)
 	}
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", ``)
-	t.Log(err)
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", `{"column":"B","expression":"x != blanks"}`)
-	t.Log(err)
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", `{"column":"B","expression":"x == blanks"}`)
-	t.Log(err)
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", `{"column":"B","expression":"x != nonblanks"}`)
-	t.Log(err)
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", `{"column":"B","expression":"x == nonblanks"}`)
-	t.Log(err)
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", `{"column":"B","expression":"x <= 1 and x >= 2"}`)
-	t.Log(err)
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", `{"column":"B","expression":"x == 1 or x == 2"}`)
-	t.Log(err)
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", `{"column":"B","expression":"x == 1 or x == 2*"}`)
-	t.Log(err)
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", `{"column":"B","expression":"x <= 1 and x >= blanks"}`)
-	t.Log(err)
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", `{"column":"B","expression":"x -- y or x == *2*"}`)
-	t.Log(err)
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", `{"column":"B","expression":"x != y or x ? *2"}`)
-	t.Log(err)
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", `{"column":"B","expression":"x -- y o r x == *2"}`)
-	t.Log(err)
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", `{"column":"B","expression":"x -- y"}`)
-	t.Log(err)
-	err = xlsx.AutoFilter("Sheet3", "D4", "B1", `{"column":"A","expression":"x -- y"}`)
-	t.Log(err)
 	err = xlsx.Save()
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
 func TestAddChart(t *testing.T) {
-	xlsx, err := OpenFile("./test/Workbook1.xlsx")
+	xlsx, err := OpenFile("./test/Book1.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 	categories := map[string]string{"A30": "Small", "A31": "Normal", "A32": "Large", "B29": "Apple", "C29": "Orange", "D29": "Pear"}
 	values := map[string]int{"B30": 2, "C30": 3, "D30": 3, "B31": 5, "C31": 2, "D31": 4, "B32": 6, "C32": 7, "D32": 8}
@@ -809,19 +837,29 @@ func TestAddChart(t *testing.T) {
 	for k, v := range values {
 		xlsx.SetCellValue("Sheet1", k, v)
 	}
-	xlsx.AddChart("Sheet1", "P1", `{"type":"bar3D","series":[{"name":"=Sheet1!$A$30","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$30:$D$30"},{"name":"=Sheet1!$A$31","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$31:$D$31"},{"name":"=Sheet1!$A$32","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"bottom","show_legend_key":false},"title":{"name":"Fruit 3D Bar Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
-	xlsx.AddChart("Sheet1", "X1", `{"type":"bar","series":[{"name":"=Sheet1!$A$30","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$30:$D$30"},{"name":"=Sheet1!$A$31","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$31:$D$31"},{"name":"=Sheet1!$A$32","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit Bar Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
-	xlsx.AddChart("Sheet1", "P16", `{"type":"doughnut","series":[{"name":"=Sheet1!$A$30","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$30:$D$30"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"right","show_legend_key":false},"title":{"name":"Fruit Doughnut Chart"},"plotarea":{"show_bubble_size":false,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":false,"show_val":false},"show_blanks_as":"zero"}`)
-	xlsx.AddChart("Sheet1", "X16", `{"type":"line","series":[{"name":"=Sheet1!$A$30","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$30:$D$30"},{"name":"=Sheet1!$A$31","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$31:$D$31"},{"name":"=Sheet1!$A$32","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"top","show_legend_key":false},"title":{"name":"Fruit Line Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
-	xlsx.AddChart("Sheet1", "P30", `{"type":"pie3D","series":[{"name":"=Sheet1!$A$30","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$30:$D$30"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"bottom","show_legend_key":false},"title":{"name":"Fruit 3D Pie Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":false,"show_val":false},"show_blanks_as":"zero"}`)
-	xlsx.AddChart("Sheet1", "X30", `{"type":"pie","series":[{"name":"=Sheet1!$A$30","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$30:$D$30"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"bottom","show_legend_key":false},"title":{"name":"Fruit Pie Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":false,"show_val":false},"show_blanks_as":"gap"}`)
-	xlsx.AddChart("Sheet2", "P1", `{"type":"radar","series":[{"name":"=Sheet1!$A$30","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$30:$D$30"},{"name":"=Sheet1!$A$31","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$31:$D$31"},{"name":"=Sheet1!$A$32","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"top_right","show_legend_key":false},"title":{"name":"Fruit Radar Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"span"}`)
-	xlsx.AddChart("Sheet2", "X1", `{"type":"scatter","series":[{"name":"=Sheet1!$A$30","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$30:$D$30"},{"name":"=Sheet1!$A$31","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$31:$D$31"},{"name":"=Sheet1!$A$32","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"bottom","show_legend_key":false},"title":{"name":"Fruit Scatter Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
-	xlsx.AddChart("Sheet2", "P16", `{"type":"barStacked","series":[{"name":"=Sheet1!$A$30","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$30:$D$30"},{"name":"=Sheet1!$A$31","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$31:$D$31"},{"name":"=Sheet1!$A$32","categories":"=Sheet1!$B$29:$D$29","values":"=Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit Bar Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet1", "P1", `{"type":"col","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit 2D Column Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet1", "X1", `{"type":"colStacked","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit 2D Stacked Column Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet1", "P16", `{"type":"colPercentStacked","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit 100% Stacked Column Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet1", "X16", `{"type":"col3DClustered","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"bottom","show_legend_key":false},"title":{"name":"Fruit 3D Clustered Column Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet1", "P30", `{"type":"col3DStacked","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit 3D 100% Stacked Bar Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet1", "X30", `{"type":"col3DPercentStacked","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit 3D 100% Stacked Column Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet1", "P45", `{"type":"col3D","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit 3D Column Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet2", "P1", `{"type":"radar","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"top_right","show_legend_key":false},"title":{"name":"Fruit Radar Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"span"}`)
+	xlsx.AddChart("Sheet2", "X1", `{"type":"scatter","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"bottom","show_legend_key":false},"title":{"name":"Fruit Scatter Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet2", "P16", `{"type":"doughnut","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"right","show_legend_key":false},"title":{"name":"Fruit Doughnut Chart"},"plotarea":{"show_bubble_size":false,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":false,"show_val":false},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet2", "X16", `{"type":"line","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"top","show_legend_key":false},"title":{"name":"Fruit Line Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet2", "P32", `{"type":"pie3D","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"bottom","show_legend_key":false},"title":{"name":"Fruit 3D Pie Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":false,"show_val":false},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet2", "X32", `{"type":"pie","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"bottom","show_legend_key":false},"title":{"name":"Fruit Pie Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":false,"show_val":false},"show_blanks_as":"gap"}`)
+	xlsx.AddChart("Sheet2", "P48", `{"type":"bar","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit 2D Clustered Bar Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet2", "X48", `{"type":"barStacked","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit 2D Stacked Bar Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet2", "P64", `{"type":"barPercentStacked","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit 2D Stacked 100% Bar Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet2", "X64", `{"type":"bar3DClustered","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit 3D Clustered Bar Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero"}`)
+	xlsx.AddChart("Sheet2", "P80", `{"type":"bar3DStacked","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit 3D Stacked Bar Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero","y_axis":{"maximum":7.5,"minimum":0.5}}`)
+	xlsx.AddChart("Sheet2", "X80", `{"type":"bar3DPercentStacked","series":[{"name":"Sheet1!$A$30","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$30:$D$30"},{"name":"Sheet1!$A$31","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$31:$D$31"},{"name":"Sheet1!$A$32","categories":"Sheet1!$B$29:$D$29","values":"Sheet1!$B$32:$D$32"}],"format":{"x_scale":1.0,"y_scale":1.0,"x_offset":15,"y_offset":10,"print_obj":true,"lock_aspect_ratio":false,"locked":false},"legend":{"position":"left","show_legend_key":false},"title":{"name":"Fruit 3D 100% Stacked Bar Chart"},"plotarea":{"show_bubble_size":true,"show_cat_name":false,"show_leader_lines":false,"show_percent":true,"show_series_name":true,"show_val":true},"show_blanks_as":"zero","x_axis":{"reverse_order":true,"maximum":0,"minimum":0},"y_axis":{"reverse_order":true,"maximum":0,"minimum":0}}`)
 	// Save xlsx file by the given path.
-	err = xlsx.SaveAs("./test/Workbook_addchart.xlsx")
+	err = xlsx.SaveAs("./test/Book_addchart.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
@@ -838,9 +876,9 @@ func TestInsertCol(t *testing.T) {
 	err := xlsx.AutoFilter("Sheet1", "A2", "B2", `{"column":"B","expression":"x != blanks"}`)
 	t.Log(err)
 	xlsx.InsertCol("Sheet1", "A")
-	err = xlsx.SaveAs("./test/Workbook_insertcol.xlsx")
+	err = xlsx.SaveAs("./test/Book_insertcol.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
@@ -858,9 +896,9 @@ func TestRemoveCol(t *testing.T) {
 	xlsx.MergeCell("Sheet1", "A2", "B2")
 	xlsx.RemoveCol("Sheet1", "A")
 	xlsx.RemoveCol("Sheet1", "A")
-	err := xlsx.SaveAs("./test/Workbook_removecol.xlsx")
+	err := xlsx.SaveAs("./test/Book_removecol.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
@@ -875,9 +913,9 @@ func TestInsertRow(t *testing.T) {
 	xlsx.SetCellHyperLink("Sheet1", "A5", "https://github.com/360EntSecGroup-Skylar/excelize", "External")
 	xlsx.InsertRow("Sheet1", -1)
 	xlsx.InsertRow("Sheet1", 4)
-	err := xlsx.SaveAs("./test/Workbook_insertrow.xlsx")
+	err := xlsx.SaveAs("./test/Book_insertrow.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
@@ -890,9 +928,9 @@ func TestSetPane(t *testing.T) {
 	xlsx.SetPanes("Panes 3", `{"freeze":false,"split":true,"x_split":3270,"y_split":1800,"top_left_cell":"N57","active_pane":"bottomLeft","panes":[{"sqref":"I36","active_cell":"I36"},{"sqref":"G33","active_cell":"G33","pane":"topRight"},{"sqref":"J60","active_cell":"J60","pane":"bottomLeft"},{"sqref":"O60","active_cell":"O60","pane":"bottomRight"}]}`)
 	xlsx.NewSheet("Panes 4")
 	xlsx.SetPanes("Panes 4", `{"freeze":true,"split":false,"x_split":0,"y_split":9,"top_left_cell":"A34","active_pane":"bottomLeft","panes":[{"sqref":"A11:XFD11","active_cell":"A11","pane":"bottomLeft"}]}`)
-	err := xlsx.SaveAs("./test/Workbook_set_panes.xlsx")
+	err := xlsx.SaveAs("./test/Book_set_panes.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
@@ -915,9 +953,9 @@ func TestRemoveRow(t *testing.T) {
 	xlsx.RemoveRow("Sheet1", 0)
 	xlsx.RemoveRow("Sheet1", 1)
 	xlsx.RemoveRow("Sheet1", 0)
-	err = xlsx.SaveAs("./test/Workbook_removerow.xlsx")
+	err = xlsx.SaveAs("./test/Book_removerow.xlsx")
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
 }
 
@@ -963,7 +1001,7 @@ func TestConditionalFormat(t *testing.T) {
 	xlsx.SetConditionalFormat("Sheet1", "K1:K10", `[{"type":"data_bar", "criteria":"=", "min_type":"min","max_type":"max","bar_color":"#638EC6"}]`)
 	// Use a formula to determine which cells to format.
 	xlsx.SetConditionalFormat("Sheet1", "L1:L10", fmt.Sprintf(`[{"type":"formula", "criteria":"L2<3", "format":%d}]`, format1))
-	err = xlsx.SaveAs("./test/Workbook_conditional_format.xlsx")
+	err = xlsx.SaveAs("./test/Book_conditional_format.xlsx")
 	if err != nil {
 		t.Log(err)
 	}
@@ -976,7 +1014,7 @@ func TestConditionalFormat(t *testing.T) {
 	// Set conditional format with illegal criteria type.
 	xlsx.SetConditionalFormat("Sheet1", "K1:K10", `[{"type":"data_bar", "criteria":"", "min_type":"min","max_type":"max","bar_color":"#638EC6"}]`)
 	// Set conditional format with file without dxfs element.
-	xlsx, err = OpenFile("./test/Workbook1.xlsx")
+	xlsx, err = OpenFile("./test/Book1.xlsx")
 	t.Log(err)
 	_, err = xlsx.NewConditionalStyle(`{"font":{"color":"#9A0511"},"fill":{"type":"pattern","color":["#FEC7CE"],"pattern":1}}`)
 	t.Log(err)
@@ -989,4 +1027,103 @@ func TestTitleToNumber(t *testing.T) {
 	if TitleToNumber("ak") != 36 {
 		t.Error("Conver title to number failed")
 	}
+}
+
+func TestSharedStrings(t *testing.T) {
+	xlsx, err := OpenFile("./test/SharedStrings.xlsx")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	xlsx.GetRows("Sheet1")
+}
+
+func TestSetSheetRow(t *testing.T) {
+	xlsx, err := OpenFile("./test/Book1.xlsx")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	xlsx.SetSheetRow("Sheet1", "B27", &[]interface{}{"cell", nil, int32(42), float64(42), time.Now()})
+	xlsx.SetSheetRow("Sheet1", "", &[]interface{}{"cell", nil, 2})
+	xlsx.SetSheetRow("Sheet1", "B27", []interface{}{})
+	xlsx.SetSheetRow("Sheet1", "B27", &xlsx)
+	err = xlsx.Save()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+}
+
+func TestRows(t *testing.T) {
+	xlsx, err := OpenFile("./test/Book1.xlsx")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	rows, err := xlsx.Rows("Sheet2")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	rowStrs := make([][]string, 0)
+	var i = 0
+	for rows.Next() {
+		i++
+		columns := rows.Columns()
+		rowStrs = append(rowStrs, columns)
+	}
+	if rows.Error() != nil {
+		t.Error(rows.Error())
+		return
+	}
+	dstRows := xlsx.GetRows("Sheet2")
+	if len(dstRows) != len(rowStrs) {
+		t.Error("values not equal")
+		return
+	}
+	for i := 0; i < len(rowStrs); i++ {
+		if !reflect.DeepEqual(trimSliceSpace(dstRows[i]), trimSliceSpace(rowStrs[i])) {
+			t.Error("values not equal")
+			return
+		}
+	}
+	rows, err = xlsx.Rows("SheetN")
+	if err != nil {
+		t.Log(err)
+	}
+}
+
+func TestOutlineLevel(t *testing.T) {
+	xlsx := NewFile()
+	xlsx.NewSheet("Sheet2")
+	xlsx.SetColOutlineLevel("Sheet1", "D", 4)
+	xlsx.GetColOutlineLevel("Sheet1", "D")
+	xlsx.GetColOutlineLevel("Shee2", "A")
+	xlsx.SetColWidth("Sheet2", "A", "D", 13)
+	xlsx.SetColOutlineLevel("Sheet2", "B", 2)
+	xlsx.SetRowOutlineLevel("Sheet1", 2, 1)
+	xlsx.GetRowOutlineLevel("Sheet1", 2)
+	err := xlsx.SaveAs("./test/Book_outline_level.xlsx")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	xlsx, err = OpenFile("./test/Book1.xlsx")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	xlsx.SetColOutlineLevel("Sheet2", "B", 2)
+}
+
+func trimSliceSpace(s []string) []string {
+	for {
+		if len(s) > 0 && s[len(s)-1] == "" {
+			s = s[:len(s)-1]
+		} else {
+			break
+		}
+	}
+	return s
 }

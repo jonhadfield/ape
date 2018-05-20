@@ -999,7 +999,7 @@ func (f *File) stylesReader() *xlsxStyleSheet {
 func (f *File) styleSheetWriter() {
 	if f.Styles != nil {
 		output, _ := xml.Marshal(f.Styles)
-		f.saveFileList("xl/styles.xml", replaceWorkSheetsRelationshipsNameSpace(string(output)))
+		f.saveFileList("xl/styles.xml", replaceWorkSheetsRelationshipsNameSpaceBytes(output))
 	}
 }
 
@@ -1236,13 +1236,13 @@ func parseFormatStyleSet(style string) (*formatStyle, error) {
 //     55    | 4E0A5348/4E0B5348h"65F6"mm"5206
 //     56    | 4E0A5348/4E0B5348h"65F6"mm"5206"ss"79D2
 //     57    | yyyy"5E74"m"6708
-//     58    | m"6708"d"65E5"`,
+//     58    | m"6708"d"65E5"
 //
 // Number format code in ja-jp language:
 //
 //     Index | Symbol
 //    -------+-------------------------------------------
-//     27    | [$-411]ge.m.
+//     27    | [$-411]ge.m.d
 //     28    | [$-411]ggge"年"m"月"d"日
 //     29    | [$-411]ggge"年"m"月"d"日
 //     30    | m/d/y
@@ -1251,18 +1251,18 @@ func parseFormatStyleSet(style string) (*formatStyle, error) {
 //     33    | h"時"mm"分"ss"秒
 //     34    | yyyy"年"m"月
 //     35    | m"月"d"日
-//     36    | [$-411]ge.m.
-//     50    | [$-411]ge.m.
+//     36    | [$-411]ge.m.d
+//     50    | [$-411]ge.m.d
 //     51    | [$-411]ggge"年"m"月"d"日
 //     52    | yyyy"年"m"月
 //     53    | m"月"d"日
 //     54    | [$-411]ggge"年"m"月"d"日
 //     55    | yyyy"年"m"月
 //     56    | m"月"d"日
-//     57    | [$-411]ge.m.
+//     57    | [$-411]ge.m.d
 //     58    | [$-411]ggge"年"m"月"d"日"
 //
-// Number format code in th-th language:
+// Number format code in ko-kr language:
 //
 //     Index | Symbol
 //    -------+-------------------------------------------
@@ -1291,7 +1291,7 @@ func parseFormatStyleSet(style string) (*formatStyle, error) {
 //
 //     Index | Symbol
 //    -------+-------------------------------------------
-//     27    | [$-411]ge.m.
+//     27    | [$-411]ge.m.d
 //     28    | [$-411]ggge"5E74"m"6708"d"65E5
 //     29    | [$-411]ggge"5E74"m"6708"d"65E5
 //     30    | m/d/y
@@ -1300,15 +1300,15 @@ func parseFormatStyleSet(style string) (*formatStyle, error) {
 //     33    | h"6642"mm"5206"ss"79D2
 //     34    | yyyy"5E74"m"6708
 //     35    | m"6708"d"65E5
-//     36    | [$-411]ge.m.
-//     50    | [$-411]ge.m.
+//     36    | [$-411]ge.m.d
+//     50    | [$-411]ge.m.d
 //     51    | [$-411]ggge"5E74"m"6708"d"65E5
 //     52    | yyyy"5E74"m"6708
 //     53    | m"6708"d"65E5
 //     54    | [$-411]ggge"5E74"m"6708"d"65E5
 //     55    | yyyy"5E74"m"6708
 //     56    | m"6708"d"65E5
-//     57    | [$-411]ge.m.
+//     57    | [$-411]ge.m.d
 //     58    | [$-411]ggge"5E74"m"6708"d"65E5"
 //
 // Number format code with unicode values provided for language glyphs where
@@ -1336,7 +1336,7 @@ func parseFormatStyleSet(style string) (*formatStyle, error) {
 //     57    | yyyy"5E74" mm"6708" dd"65E5
 //     58    | mm-dd
 //
-// Number format code in ko-kr language:
+// Number format code in th-th language:
 //
 //     Index | Symbol
 //    -------+-------------------------------------------
@@ -1901,7 +1901,8 @@ func (f *File) NewStyle(style string) (int, error) {
 	fillID = s.Fills.Count - 1
 
 	applyAlignment, alignment := fs.Alignment != nil, setAlignment(fs)
-	cellXfsID = setCellXfs(s, fontID, numFmtID, fillID, borderID, applyAlignment, alignment)
+	applyProtection, protection := fs.Protection != nil, setProtection(fs)
+	cellXfsID = setCellXfs(s, fontID, numFmtID, fillID, borderID, applyAlignment, applyProtection, alignment, protection)
 	return cellXfsID, nil
 }
 
@@ -1937,9 +1938,6 @@ func (f *File) NewConditionalStyle(style string) (int, error) {
 // setFont provides function to add font style by given cell format settings.
 func setFont(formatStyle *formatStyle) *font {
 	fontUnderlineType := map[string]string{"single": "single", "double": "double"}
-	if formatStyle.Font.Family == "" {
-		formatStyle.Font.Family = "Calibri"
-	}
 	if formatStyle.Font.Size < 1 {
 		formatStyle.Font.Size = 11
 	}
@@ -1953,7 +1951,10 @@ func setFont(formatStyle *formatStyle) *font {
 		Color:  &xlsxColor{RGB: getPaletteColor(formatStyle.Font.Color)},
 		Name:   &attrValString{Val: formatStyle.Font.Family},
 		Family: &attrValInt{Val: 2},
-		Scheme: &attrValString{Val: "minor"},
+	}
+	if f.Name.Val == "" {
+		f.Name.Val = "Calibri"
+		f.Scheme = &attrValString{Val: "minor"}
 	}
 	val, ok := fontUnderlineType[formatStyle.Font.Underline]
 	if ok {
@@ -2155,6 +2156,17 @@ func setAlignment(formatStyle *formatStyle) *xlsxAlignment {
 	return &alignment
 }
 
+// setProtection provides function to set protection properties associated
+// with the cell.
+func setProtection(formatStyle *formatStyle) *xlsxProtection {
+	var protection xlsxProtection
+	if formatStyle.Protection != nil {
+		protection.Hidden = formatStyle.Protection.Hidden
+		protection.Locked = formatStyle.Protection.Locked
+	}
+	return &protection
+}
+
 // setBorders provides function to add border elements in the styles.xml by
 // given borders format settings.
 func setBorders(formatStyle *formatStyle) *xlsxBorder {
@@ -2209,7 +2221,7 @@ func setBorders(formatStyle *formatStyle) *xlsxBorder {
 
 // setCellXfs provides function to set describes all of the formatting for a
 // cell.
-func setCellXfs(style *xlsxStyleSheet, fontID, numFmtID, fillID, borderID int, applyAlignment bool, alignment *xlsxAlignment) int {
+func setCellXfs(style *xlsxStyleSheet, fontID, numFmtID, fillID, borderID int, applyAlignment, applyProtection bool, alignment *xlsxAlignment, protection *xlsxProtection) int {
 	var xf xlsxXf
 	xf.FontID = fontID
 	if fontID != 0 {
@@ -2224,6 +2236,10 @@ func setCellXfs(style *xlsxStyleSheet, fontID, numFmtID, fillID, borderID int, a
 	style.CellXfs.Count++
 	xf.Alignment = alignment
 	xf.ApplyAlignment = applyAlignment
+	if applyProtection {
+		xf.ApplyProtection = applyProtection
+		xf.Protection = protection
+	}
 	xfID := 0
 	xf.XfID = &xfID
 	style.CellXfs.Xf = append(style.CellXfs.Xf, xf)
@@ -2286,6 +2302,14 @@ func setCellXfs(style *xlsxStyleSheet, fontID, numFmtID, fillID, borderID int, a
 //    }
 //    xlsx.SetCellStyle("Sheet1", "H9", "H9", style)
 //
+// Hide and lock for cell H9 on Sheet1:
+//
+//    style, err := xlsx.NewStyle(`{"protection":{"hidden":true, "locked":true}}`)
+//    if err != nil {
+//        fmt.Println(err)
+//    }
+//    xlsx.SetCellStyle("Sheet1", "H9", "H9", style)
+//
 func (f *File) SetCellStyle(sheet, hcell, vcell string, styleID int) {
 	hcell = strings.ToUpper(hcell)
 	vcell = strings.ToUpper(vcell)
@@ -2307,30 +2331,23 @@ func (f *File) SetCellStyle(sheet, hcell, vcell string, styleID int) {
 	vyAxis := vrow - 1
 	vxAxis := TitleToNumber(vcol)
 
+	// Correct the coordinate area, such correct C1:B3 to B1:C3.
 	if vxAxis < hxAxis {
-		hcell, vcell = vcell, hcell
 		vxAxis, hxAxis = hxAxis, vxAxis
 	}
 
 	if vyAxis < hyAxis {
-		hcell, vcell = vcell, hcell
 		vyAxis, hyAxis = hyAxis, vyAxis
 	}
-
-	// Correct the coordinate area, such correct C1:B3 to B1:C3.
-	hcell = ToAlphaString(hxAxis) + strconv.Itoa(hyAxis+1)
-	vcell = ToAlphaString(vxAxis) + strconv.Itoa(vyAxis+1)
 
 	xlsx := f.workSheetReader(sheet)
 
 	completeRow(xlsx, vyAxis+1, vxAxis+1)
 	completeCol(xlsx, vyAxis+1, vxAxis+1)
 
-	for r, row := range xlsx.SheetData.Row {
-		for k, c := range row.C {
-			if checkCellInArea(c.R, hcell+":"+vcell) {
-				xlsx.SheetData.Row[r].C[k].S = styleID
-			}
+	for r := hyAxis; r <= vyAxis; r++ {
+		for k := hxAxis; k <= vxAxis; k++ {
+			xlsx.SheetData.Row[r].C[k].S = styleID
 		}
 	}
 }

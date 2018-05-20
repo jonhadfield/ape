@@ -34,7 +34,7 @@ func parseFormatShapeSet(formatSet string) *formatShape {
 //
 //    xlsx.AddShape("Sheet1", "G6", `{"type":"rect","color":{"line":"#4286F4","fill":"#8eb9ff"},"paragraph":[{"text":"Rectangle Shape","font":{"bold":true,"italic":true,"family":"Berlin Sans FB Demi","size":36,"color":"#777777","underline":"sng"}}],"width":180,"height": 90}`)
 //
-// The following shows the type of chart supported by excelize:
+// The following shows the type of shape supported by excelize:
 //
 //    accentBorderCallout1 (Callout 1 with Border and Accent Shape)
 //    accentBorderCallout2 (Callout 2 with Border and Accent Shape)
@@ -285,7 +285,7 @@ func (f *File) addDrawingShape(sheet, drawingXML, cell string, formatSet *format
 	content.Xdr = NameSpaceDrawingMLSpreadSheet
 	cNvPrID := f.drawingParser(drawingXML, &content)
 	twoCellAnchor := xdrCellAnchor{}
-	twoCellAnchor.EditAs = "oneCell"
+	twoCellAnchor.EditAs = formatSet.Format.Positioning
 	from := xlsxFrom{}
 	from.Col = colStart
 	from.ColOff = formatSet.Format.OffsetX * EMU
@@ -390,7 +390,7 @@ func (f *File) addDrawingShape(sheet, drawingXML, cell string, formatSet *format
 	}
 	content.TwoCellAnchor = append(content.TwoCellAnchor, &twoCellAnchor)
 	output, _ := xml.Marshal(content)
-	f.saveFileList(drawingXML, string(output))
+	f.saveFileList(drawingXML, output)
 }
 
 // setShapeRef provides function to set color with hex model by given actual

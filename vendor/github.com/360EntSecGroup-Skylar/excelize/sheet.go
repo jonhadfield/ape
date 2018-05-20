@@ -12,10 +12,14 @@ import (
 	"unicode/utf8"
 )
 
-// NewSheet provides function to create a new sheet by given index, when
-// creating a new XLSX file, the default sheet will be create, when you create a
-// new file.
+// NewSheet provides function to create a new sheet by given worksheet name,
+// when creating a new XLSX file, the default sheet will be create, when you
+// create a new file.
 func (f *File) NewSheet(name string) int {
+	// Check if the worksheet already exists
+	if f.GetSheetIndex(name) != 0 {
+		return f.SheetCount
+	}
 	f.SheetCount++
 	// Update docProps/app.xml
 	f.setAppXML()
@@ -46,7 +50,7 @@ func (f *File) contentTypesReader() *xlsxTypes {
 func (f *File) contentTypesWriter() {
 	if f.ContentTypes != nil {
 		output, _ := xml.Marshal(f.ContentTypes)
-		f.saveFileList("[Content_Types].xml", string(output))
+		f.saveFileList("[Content_Types].xml", output)
 	}
 }
 
@@ -66,7 +70,7 @@ func (f *File) workbookReader() *xlsxWorkbook {
 func (f *File) workbookWriter() {
 	if f.WorkBook != nil {
 		output, _ := xml.Marshal(f.WorkBook)
-		f.saveFileList("xl/workbook.xml", replaceRelationshipsNameSpace(string(output)))
+		f.saveFileList("xl/workbook.xml", replaceRelationshipsNameSpaceBytes(output))
 	}
 }
 
@@ -79,7 +83,7 @@ func (f *File) worksheetWriter() {
 				f.Sheet[path].SheetData.Row[k].C = trimCell(v.C)
 			}
 			output, _ := xml.Marshal(sheet)
-			f.saveFileList(path, replaceWorkSheetsRelationshipsNameSpace(string(output)))
+			f.saveFileList(path, replaceWorkSheetsRelationshipsNameSpaceBytes(output))
 			ok := f.checked[path]
 			if ok {
 				f.checked[path] = false
@@ -147,7 +151,7 @@ func (f *File) workbookRelsReader() *xlsxWorkbookRels {
 func (f *File) workbookRelsWriter() {
 	if f.WorkBookRels != nil {
 		output, _ := xml.Marshal(f.WorkBookRels)
-		f.saveFileList("xl/_rels/workbook.xml.rels", string(output))
+		f.saveFileList("xl/_rels/workbook.xml.rels", output)
 	}
 }
 
@@ -179,7 +183,7 @@ func (f *File) addXlsxWorkbookRels(sheet int) int {
 
 // setAppXML update docProps/app.xml file of XML.
 func (f *File) setAppXML() {
-	f.saveFileList("docProps/app.xml", templateDocpropsApp)
+	f.saveFileList("docProps/app.xml", []byte(templateDocpropsApp))
 }
 
 // Some tools that read XLSX files have very strict requirements about the
@@ -195,8 +199,16 @@ func replaceRelationshipsNameSpace(workbookMarshal string) string {
 	return strings.Replace(workbookMarshal, oldXmlns, newXmlns, -1)
 }
 
-// SetActiveSheet provides function to set default active sheet of XLSX by given
-// index.
+func replaceRelationshipsNameSpaceBytes(workbookMarshal []byte) []byte {
+	oldXmlns := []byte(`<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">`)
+	newXmlns := []byte(`<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="x15" xmlns:x15="http://schemas.microsoft.com/office/spreadsheetml/2010/11/main">`)
+	return bytes.Replace(workbookMarshal, oldXmlns, newXmlns, -1)
+}
+
+// SetActiveSheet provides function to set default active worksheet of XLSX by
+// given index. Note that active index is different with the index that got by
+// function GetSheetMap, and it should be greater than 0 and less than total
+// worksheet numbers.
 func (f *File) SetActiveSheet(index int) {
 	if index < 1 {
 		index = 1
@@ -227,7 +239,6 @@ func (f *File) SetActiveSheet(index int) {
 			}
 		}
 	}
-	return
 }
 
 // GetActiveSheetIndex provides function to get active sheet of XLSX. If not
@@ -311,7 +322,7 @@ func (f *File) GetSheetIndex(name string) int {
 // GetSheetMap provides function to get worksheet name and index map of XLSX.
 // For example:
 //
-//    xlsx, err := excelize.OpenFile("./Workbook.xlsx")
+//    xlsx, err := excelize.OpenFile("./Book1.xlsx")
 //    if err != nil {
 //        return
 //    }
@@ -385,6 +396,7 @@ func (f *File) DeleteSheet(name string) {
 			f.SheetCount--
 		}
 	}
+	f.SetActiveSheet(len(f.GetSheetMap()))
 }
 
 // deleteSheetFromWorkbookRels provides function to remove worksheet
@@ -530,12 +542,8 @@ func parseFormatPanesSet(formatSet string) *formatPanes {
 //                                    | been applied, dividing the pane into right and left
 //                                    | regions. In that case, this value specifies the left pane
 //                                    |
-//                                    | Top right pane, when both vertical and horizontal
+//    topRight (Top Right Pane)       | Top right pane, when both vertical and horizontal
 //                                    | splits are applied.
-//                                    |
-//    topRight (Top Right Pane)       | This value is also used when only a vertical split has
-//                                    | splits are applied.
-//                                    |
 //                                    |
 //                                    | This value is also used when only a vertical split has
 //                                    | been applied, dividing the pane into right and left
@@ -571,19 +579,19 @@ func parseFormatPanesSet(formatSet string) *formatPanes {
 // set of ranges.
 //
 // An example of how to freeze column A in the Sheet1 and set the active cell on
-// Sheet1!A16:
+// Sheet1!K16:
 //
-//    xlsx.SetPanes("Sheet1", `{"freeze":true,"split":false,"x_split":1,"y_split":0,"topLeftCell":"B1","activePane":"topRight","panes":[{"sqref":"K16","active_cell":"K16","pane":"topRight"}]}`)
+//    xlsx.SetPanes("Sheet1", `{"freeze":true,"split":false,"x_split":1,"y_split":0,"top_left_cell":"B1","active_pane":"topRight","panes":[{"sqref":"K16","active_cell":"K16","pane":"topRight"}]}`)
 //
 // An example of how to freeze rows 1 to 9 in the Sheet1 and set the active cell
-// on Sheet1!A11:
+// ranges on Sheet1!A11:XFD11:
 //
-//    xlsx.SetPanes("Sheet1", `{"freeze":true,"split":false,"x_split":0,"y_split":9,"topLeftCell":"A34","activePane":"bottomLeft","panes":[{"sqref":"A11:XFD11","active_cell":"A11","pane":"bottomLeft"}]}`)
+//    xlsx.SetPanes("Sheet1", `{"freeze":true,"split":false,"x_split":0,"y_split":9,"top_left_cell":"A34","active_pane":"bottomLeft","panes":[{"sqref":"A11:XFD11","active_cell":"A11","pane":"bottomLeft"}]}`)
 //
 // An example of how to create split panes in the Sheet1 and set the active cell
 // on Sheet1!J60:
 //
-//    xlsx.SetPanes("Sheet1", `{"freeze":false,"split":true,"x_split":3270,"y_split":1800,"topLeftCell":"N57","activePane":"bottomLeft","panes":[{"sqref":"I36","active_cell":"I36"},{"sqref":"G33","active_cell":"G33","pane":"topRight"},{"sqref":"J60","active_cell":"J60","pane":"bottomLeft"},{"sqref":"O60","active_cell":"O60","pane":"bottomRight"}]}`)
+//    xlsx.SetPanes("Sheet1", `{"freeze":false,"split":true,"x_split":3270,"y_split":1800,"top_left_cell":"N57","active_pane":"bottomLeft","panes":[{"sqref":"I36","active_cell":"I36"},{"sqref":"G33","active_cell":"G33","pane":"topRight"},{"sqref":"J60","active_cell":"J60","pane":"bottomLeft"},{"sqref":"O60","active_cell":"O60","pane":"bottomRight"}]}`)
 //
 // An example of how to unfreeze and remove all panes on Sheet1:
 //
