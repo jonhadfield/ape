@@ -29,6 +29,9 @@ cover: test
 fmt:
 	find . -name '*.go' -not -wholename './presets/presets-data.go' -not -wholename './vendor/*' | while read -r file; do gofmt -w -s "$$file"; goimports -w "$$file"; done
 
+critic:
+	gocritic check-package github.com/jonhadfield/ape
+
 lint:
 	gometalinter -e testing.go -e validation_test.go -e presets-data.go --vendor --disable-all \
 		--enable=deadcode \
