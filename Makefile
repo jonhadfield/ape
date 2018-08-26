@@ -18,7 +18,7 @@ setup:
 	go get -u golang.org/x/tools/cmd/cover
 	go get -u github.com/360EntSecGroup-Skylar/excelize
 	go get -u github.com/jteeuwen/go-bindata/...
-	gometalinter --install --update
+	gometalinter --install
 
 test:
 	gotestcover $(TEST_OPTIONS) -covermode=atomic -coverprofile=coverage.txt $(SOURCE_FILES) -run $(TEST_PATTERN) -timeout=30s
@@ -45,7 +45,7 @@ lint:
 		--enable=staticcheck \
 		--enable=unparam\
 		--enable=varcheck \
-		--enable=gas \
+		--enable=gosec \
 		--enable=dupl \
 		--enable=structcheck \
 		--enable=vetshadow \
