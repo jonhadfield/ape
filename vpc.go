@@ -157,7 +157,8 @@ func enforceVpcPolicy(l []interface{}, session *session.Session, planItem PlanIt
 		}
 	}
 	var anyFiltersMatch bool
-	for _, vpcItem := range allVpcsByAccount[planItem.Target.AccountID] {
+	for i := range allVpcsByAccount[planItem.Target.AccountID] {
+		vpcItem := allVpcsByAccount[planItem.Target.AccountID][i]
 		if isIgnored(isIgnoredInput{
 			planItem:    planItem,
 			resourceIDs: []string{*vpcItem.vpc.VpcId, getNameTag(vpcItem.vpc.Tags)},

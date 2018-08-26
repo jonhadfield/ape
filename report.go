@@ -146,9 +146,11 @@ func (po enforcePlanOutput) printToMDTable(l []interface{}) (err error) {
 	var moreThanOneAccount bool
 	var lastAccountID string
 	// Check if single account or multiple
-	for _, planItem := range po {
+	for i := range po {
+		planItem := po[i]
 		for _, ePO := range planItem {
-			for _, ePOI := range ePO {
+			for j := range ePO {
+				ePOI := ePO[j]
 				if lastAccountID != "" && ePOI.AccountID != lastAccountID {
 					moreThanOneAccount = true
 					goto OUTPUT
@@ -567,7 +569,8 @@ func reportItem(item enforcePlanItemOutput, reportAccount bool) {
 
 	var lastPolicyName string
 	for _, ePO := range item {
-		for _, ePOItem := range ePO {
+		for i := range ePO {
+			ePOItem := ePO[i]
 			var justAffectedResource bool
 			if (ePOItem.ResourceArn != "" || ePOItem.Message != "") && !ePOItem.IssuesFound && ePOItem.PolicyName == lastPolicyName {
 				justAffectedResource = true

@@ -97,7 +97,7 @@ func getAllRegionsForService(service string) (result []string) {
 	return
 }
 
-func isServiceImplementedInRegion(service string, region string) (result string) {
+func isServiceImplementedInRegion(service, region string) (result string) {
 	result = "no"
 	if h.StringInSlice(service, globalServices) {
 		result = "global"

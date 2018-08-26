@@ -78,7 +78,8 @@ func validatePolicyResourceAndFilters(policy r.Policy) (err error) {
 }
 
 func validatePolicies(policies r.Policies) (err error) {
-	for _, policy := range policies.Policies {
+	for i := range policies.Policies {
+		policy := policies.Policies[i]
 		// Check specified resource is implemented
 		err = validatePolicyResourceAndFilters(policy)
 		if err != nil {

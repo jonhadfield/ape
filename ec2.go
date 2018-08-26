@@ -300,7 +300,7 @@ func getEc2Tag(tags []*ec2.Tag, key string) (value string) {
 var ec2ClientByAccountAndRegion map[string]ec2iface.EC2API
 var ec2ClientByAccountAndRegionMutex sync.Mutex
 
-func getEC2Client(session *session.Session, accID string, region string) (output ec2iface.EC2API) {
+func getEC2Client(session *session.Session, accID, region string) (output ec2iface.EC2API) {
 	ec2ClientByAccountAndRegionMutex.Lock()
 	if ec2ClientByAccountAndRegion == nil {
 		ec2ClientByAccountAndRegion = make(map[string]ec2iface.EC2API)
@@ -406,7 +406,7 @@ type secGroupPerm struct {
 }
 
 func combineSecGroupPermissions(securityGroup ec2.SecurityGroup) (allSecGroupPerms []secGroupPerm,
-	hasAnyRules bool, hasAnyIngressRules bool, hasAnyEgressRules bool) {
+	hasAnyRules, hasAnyIngressRules, hasAnyEgressRules bool) {
 	for _, i := range securityGroup.IpPermissions {
 		hasAnyRules = true
 		hasAnyIngressRules = true
@@ -479,7 +479,7 @@ SecGroup:
 		var groupFiltersMatch bool
 		// Combine ingress and ingress permissions to single sequence so we can loop once
 		allSecGroupPerms, hasAnyRules, hasAnyIngressRules,
-			hasAnyEgressRules := combineSecGroupPermissions(secGroup.securityGroup)
+		hasAnyEgressRules := combineSecGroupPermissions(secGroup.securityGroup)
 		// Process group specific filters, before going through rule based filters
 		// If we don't match a group based filter on this sec group, then policy doesn't match, so we'll continue
 		for _, f := range planItem.Policy.Filters {
@@ -711,7 +711,8 @@ func enforceInstancePolicy(l []interface{}, session *session.Session,
 	// Loop through regions
 	var filtersMatch, anyFiltersMatch bool
 	var details []enforcePolicyOutputItemDetail
-	for _, instance := range allEC2InstancesByAccount[planItem.Target.AccountID] {
+	for i := range allEC2InstancesByAccount[planItem.Target.AccountID] {
+		instance := allEC2InstancesByAccount[planItem.Target.AccountID][i]
 		if isIgnored(isIgnoredInput{
 			planItem:    planItem,
 			resourceIDs: []string{getNameTag(instance.instance.Tags), *instance.instance.InstanceId},

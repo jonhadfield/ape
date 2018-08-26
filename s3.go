@@ -119,7 +119,7 @@ func unmarshallS3ResourcesFromPolicyStatement(ps rs.StatementEntry) (resources [
 		resources = append(resources, multipleResources...)
 
 	} else {
-		resources = append(resources, singleResource[:])
+		resources = append(resources, singleResource)
 	}
 	return
 }
@@ -136,7 +136,7 @@ func unmarshallS3ActionsFromPolicyStatement(ps rs.StatementEntry) (actions []str
 		}
 		actions = append(actions, multipleActions...)
 	} else {
-		actions = append(actions, singleAction[:])
+		actions = append(actions, singleAction)
 	}
 	return
 }
