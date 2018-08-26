@@ -46,7 +46,8 @@ func ParsePoliciesFileContent(content []byte) (policies r.Policies, err error) {
 	updatedPolicies := make([]r.Policy, 0, len(policies.Policies))
 	var modified bool
 	// set policy default to medium
-	for _, policy := range policies.Policies {
+	for i := range policies.Policies {
+		policy := policies.Policies[i]
 		policy.Name = strings.TrimSpace(policy.Name)
 		if policy.Severity == "" {
 			modified = true
@@ -212,7 +213,8 @@ func getPolicyNameSuggestion(policyName string, policies r.Policies) (suggestion
 	}
 	var dist int
 	var best bestMatch
-	for _, policy := range policies.Policies {
+	for i := range policies.Policies {
+		policy := policies.Policies[i]
 		dist = lev.DistanceForStrings([]rune(policyName), []rune(policy.Name), lev.DefaultOptions)
 		if best == (bestMatch{}) || dist < best.dist {
 			best.name = policy.Name
@@ -226,7 +228,8 @@ func getPolicyNameSuggestion(policyName string, policies r.Policies) (suggestion
 }
 
 func getPolicyByName(policyName string, policies r.Policies) (policy r.Policy, err error) {
-	for _, existingPolicy := range policies.Policies {
+	for i := range policies.Policies {
+		existingPolicy := policies.Policies[i]
 		if existingPolicy.Name == policyName {
 			return existingPolicy, nil
 		}

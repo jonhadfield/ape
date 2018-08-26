@@ -266,14 +266,16 @@ func CreatePlan(loggers []interface{}, input *CreatePlanInput) (output CreatePla
 				return
 			}
 			for _, target := range targets {
-				for _, itemPolicy := range itemPolicies {
+				for i := range itemPolicies {
+					itemPolicy := itemPolicies[i]
 					processedItemPolicies, err = processItemPolicy(itemPolicy, playRegionsSpecified, play, target, input.Args)
 					planList = append(planList, processedItemPolicies)
 				}
 
 			}
 		} else {
-			for _, itemPolicy := range itemPolicies {
+			for i := range itemPolicies {
+				itemPolicy := itemPolicies[i]
 				processedItemPolicies, err = processItemPolicy(itemPolicy, playRegionsSpecified, play, planItemTarget{}, input.Args)
 				planList = append(planList, processedItemPolicies)
 			}

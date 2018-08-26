@@ -359,7 +359,8 @@ func enforceVolumePolicy(l []interface{},
 	// Loop through regions
 	var filtersMatch bool
 	var anyFiltersMatch bool
-	for _, volume := range volumes {
+	for i := range volumes {
+		volume := volumes[i]
 		var filterMatch bool
 		if isIgnored(isIgnoredInput{
 			planItem:    planItem,
@@ -464,7 +465,8 @@ func enforceSecurityGroupPolicy(l []interface{}, session *session.Session,
 
 	var anyFiltersMatch bool
 SecGroup:
-	for _, secGroup := range secGroups {
+	for i := range secGroups {
+		secGroup := secGroups[i]
 		var identifiers = []string{*secGroup.securityGroup.GroupId, *secGroup.securityGroup.GroupName}
 		if isIgnored(isIgnoredInput{
 			planItem:    planItem,

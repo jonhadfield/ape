@@ -367,7 +367,8 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 
 	}
 	var anyFiltersMatch bool
-	for _, trail := range allTrailsByAccount[planItem.Target.AccountID] {
+	for i := range allTrailsByAccount[planItem.Target.AccountID] {
+		trail := allTrailsByAccount[planItem.Target.AccountID][i]
 		if isIgnored(isIgnoredInput{
 			planItem:    planItem,
 			resourceIDs: []string{*trail.trail.Name},

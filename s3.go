@@ -42,7 +42,7 @@ import (
 
 var s3SClientByAccountAndRegion map[string]*s3.S3
 
-func getActualBucketRegion(l []interface{}, session *session.Session, s3BucketName string, homeRegion string) (region string, err error) {
+func getActualBucketRegion(l []interface{}, session *session.Session, s3BucketName, homeRegion string) (region string, err error) {
 	ctx := context.Background()
 	region, err = s3manager.GetBucketRegion(ctx, session, s3BucketName, homeRegion)
 	if err != nil {
@@ -53,7 +53,7 @@ func getActualBucketRegion(l []interface{}, session *session.Session, s3BucketNa
 
 var s3SClientByAccountAndRegionMutex sync.Mutex
 
-func getS3Client(l []interface{}, session *session.Session, accID string, actualRegion string) (output *s3.S3) {
+func getS3Client(l []interface{}, session *session.Session, accID, actualRegion string) (output *s3.S3) {
 	s3SClientByAccountAndRegionMutex.Lock()
 	if s3SClientByAccountAndRegion == nil {
 		h.Debug(l, "initialising s3client cache")
