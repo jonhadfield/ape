@@ -6,6 +6,7 @@
     "jsonVersion":"1.1",
     "protocol":"json",
     "serviceFullName":"AWS CodeBuild",
+    "serviceId":"CodeBuild",
     "signatureVersion":"v4",
     "targetPrefix":"CodeBuild_20161006",
     "uid":"codebuild-2016-10-06"
@@ -310,7 +311,8 @@
         "buildComplete":{"shape":"Boolean"},
         "initiator":{"shape":"String"},
         "vpcConfig":{"shape":"VpcConfig"},
-        "networkInterface":{"shape":"NetworkInterface"}
+        "networkInterface":{"shape":"NetworkInterface"},
+        "encryptionKey":{"shape":"NonEmptyString"}
       }
     },
     "BuildArtifacts":{
@@ -318,7 +320,9 @@
       "members":{
         "location":{"shape":"String"},
         "sha256sum":{"shape":"String"},
-        "md5sum":{"shape":"String"}
+        "md5sum":{"shape":"String"},
+        "overrideArtifactName":{"shape":"WrapperBoolean"},
+        "encryptionDisabled":{"shape":"WrapperBoolean"}
       }
     },
     "BuildIds":{
@@ -393,7 +397,8 @@
         "name",
         "source",
         "artifacts",
-        "environment"
+        "environment",
+        "serviceRole"
       ],
       "members":{
         "name":{"shape":"ProjectName"},
@@ -490,7 +495,10 @@
     },
     "EnvironmentType":{
       "type":"string",
-      "enum":["LINUX_CONTAINER"]
+      "enum":[
+        "WINDOWS_CONTAINER",
+        "LINUX_CONTAINER"
+      ]
     },
     "EnvironmentVariable":{
       "type":"structure",
@@ -658,7 +666,8 @@
       "enum":[
         "DEBIAN",
         "AMAZON_LINUX",
-        "UBUNTU"
+        "UBUNTU",
+        "WINDOWS_SERVER"
       ]
     },
     "Project":{
@@ -691,7 +700,9 @@
         "path":{"shape":"String"},
         "namespaceType":{"shape":"ArtifactNamespace"},
         "name":{"shape":"String"},
-        "packaging":{"shape":"ArtifactPackaging"}
+        "packaging":{"shape":"ArtifactPackaging"},
+        "overrideArtifactName":{"shape":"WrapperBoolean"},
+        "encryptionDisabled":{"shape":"WrapperBoolean"}
       }
     },
     "ProjectBadge":{
@@ -759,6 +770,7 @@
         "gitCloneDepth":{"shape":"GitCloneDepth"},
         "buildspec":{"shape":"String"},
         "auth":{"shape":"SourceAuth"},
+        "reportBuildStatus":{"shape":"WrapperBoolean"},
         "insecureSsl":{"shape":"WrapperBoolean"}
       }
     },
@@ -827,6 +839,7 @@
         "gitCloneDepthOverride":{"shape":"GitCloneDepth"},
         "buildspecOverride":{"shape":"String"},
         "insecureSslOverride":{"shape":"WrapperBoolean"},
+        "reportBuildStatusOverride":{"shape":"WrapperBoolean"},
         "environmentTypeOverride":{"shape":"EnvironmentType"},
         "imageOverride":{"shape":"NonEmptyString"},
         "computeTypeOverride":{"shape":"ComputeType"},

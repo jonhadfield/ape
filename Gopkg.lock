@@ -19,11 +19,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cc8bb985f2e3b9532374c501340b9869ffb533caa20f2a58d8f56a15bb48aefe"
+  digest = "1:7b3894720be2cf00871b6a28fe5b51635344bda64f1415a1c852c93b5701444c"
   name = "github.com/RackSec/srslog"
   packages = ["."]
   pruneopts = ""
-  revision = "1f7cff998e92763c026b26ab7c80a39e19acc368"
+  revision = "a4725f04ec91af1a91b380da679d6e0c2f061e59"
 
 [[projects]]
   branch = "master"
@@ -45,7 +45,7 @@
   revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 
 [[projects]]
-  digest = "1:2230457ffe32cf0eb6b977765d98ca027ff6effb8fb011710f090ce9fdf55d36"
+  digest = "1:174e893894d5d9a24b89e863df45838c2a9f39e9d4e0467b6e211744c40644ac"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -58,6 +58,7 @@
     "aws/credentials/ec2rolecreds",
     "aws/credentials/endpointcreds",
     "aws/credentials/stscreds",
+    "aws/csm",
     "aws/defaults",
     "aws/ec2metadata",
     "aws/endpoints",
@@ -66,9 +67,12 @@
     "aws/signer/v4",
     "internal/sdkio",
     "internal/sdkrand",
+    "internal/sdkuri",
     "internal/shareddefaults",
     "private/protocol",
     "private/protocol/ec2query",
+    "private/protocol/eventstream",
+    "private/protocol/eventstream/eventstreamapi",
     "private/protocol/json/jsonutil",
     "private/protocol/jsonrpc",
     "private/protocol/query",
@@ -98,8 +102,8 @@
     "service/sts",
   ]
   pruneopts = ""
-  revision = "5f796043d63bfddca929cfbcffce01e5a894aad5"
-  version = "v1.13.52"
+  revision = "4324bc9d8865bdb3e6aa86ec7772ca1272d2750e"
+  version = "v1.15.21"
 
 [[projects]]
   digest = "1:e988ed0ca0d81f4d28772760c02ee95084961311291bdfefc1b04617c178b722"
@@ -110,20 +114,20 @@
   version = "v1.7.0"
 
 [[projects]]
-  digest = "1:f6d8770900622a855dbeda0aaefb536ad97bc30315e6647a02c4e2044f4a858f"
+  digest = "1:cd5bab9c9e23ffa6858eaa79dc827fd84bc24bc00b0cfb0b14036e393da2b1fa"
   name = "github.com/go-ini/ini"
   packages = ["."]
   pruneopts = ""
-  revision = "6529cf7c58879c08d927016dde4477f18a0634cb"
-  version = "v1.36.0"
+  revision = "5cf292cae48347c2490ac1a58fe36735fb78df7e"
+  version = "v1.38.2"
 
 [[projects]]
   branch = "master"
-  digest = "1:8a3c0eacde01fd09e733180c47607a4eec76ef1152c28c5cba35571741cf6a16"
+  digest = "1:d63a1ded0d74cab5e9d02032c9719cafd4e5a798a4ef87c97e651c9738ed1f7f"
   name = "github.com/gopherjs/gopherjs"
   packages = ["js"]
   pruneopts = ""
-  revision = "8dffc02ea1cb8398bb73f30424697c60fcf8d4c5"
+  revision = "0210a2f0f73c96103378b0b935f39868e5731809"
 
 [[projects]]
   digest = "1:6f49eae0c1e5dab1dafafee34b207aeb7a42303105960944828c2079b92fc88e"
@@ -157,12 +161,12 @@
   version = "v0.0.3"
 
 [[projects]]
-  digest = "1:81e673df85e765593a863f67cba4544cf40e8919590f04d67664940786c2b61a"
+  digest = "1:82b912465c1da0668582a7d1117339c278e786c2536b3c3623029a0c7141c2d0"
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
   pruneopts = ""
-  revision = "9e777a8366cce605130a531d2cd6363d07ad7317"
-  version = "v0.0.2"
+  revision = "ce7b0b5c7b45a81508558cd1dba6bb1e4ddb51bb"
+  version = "v0.0.3"
 
 [[projects]]
   digest = "1:53f0ca8536bff15e4974b90def20012f61ef4fdb40b8b2712fa09c2820e53974"
@@ -238,33 +242,33 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:23475506e81e16ca25540cb95db19d0746a7e9ca001e7a06463493bb58761754"
+  digest = "1:793a79198b755828dec284c6f1325e24e09186f1b7ba818b65c7c35104ed86eb"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = ""
-  revision = "1a580b3eff7814fc9b40602fd35256c63b50f491"
+  revision = "614d502a4dac94afa3a6ce146bd1736da82514c6"
 
 [[projects]]
   branch = "master"
-  digest = "1:aebbf90777ce08fbe603e39241303619e78825b9ac23329f75447793ae6807e0"
+  digest = "1:7dd0f1b8c8bd70dbae4d3ed3fbfaec224e2b27bcc0fc65882d6f1dba5b1f6e22"
   name = "golang.org/x/net"
   packages = [
     "context",
     "websocket",
   ]
   pruneopts = ""
-  revision = "57065200b4b034a1c8ad54ff77069408c2218ae6"
+  revision = "8a410e7b638dca158bf9e766925842f6651ff828"
 
 [[projects]]
   branch = "master"
-  digest = "1:af6136a9636e36e4114a25f59d4fe5b09cc8fa1b3e5014c6223a3f19a85d08f1"
+  digest = "1:7a5f7a1206de6b90f67cb465e489eac3298e95afa7262813b542df4fab38952f"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = ""
-  revision = "7c87d13f8e835d2fb3a70a2912c811ed0c1d241b"
+  revision = "4910a1d54f876d7b22162a85f4d066d3ee649450"
 
 [[projects]]
   digest = "1:15d017551627c8bb091bde628215b2861bed128855343fdd570c62d08871f6e1"
