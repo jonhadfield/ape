@@ -481,7 +481,7 @@ SecGroup:
 		var groupFiltersMatch bool
 		// Combine ingress and ingress permissions to single sequence so we can loop once
 		allSecGroupPerms, hasAnyRules, hasAnyIngressRules,
-		hasAnyEgressRules := combineSecGroupPermissions(secGroup.securityGroup)
+			hasAnyEgressRules := combineSecGroupPermissions(secGroup.securityGroup)
 		// Process group specific filters, before going through rule based filters
 		// If we don't match a group based filter on this sec group, then policy doesn't match, so we'll continue
 		for _, f := range planItem.Policy.Filters {
