@@ -2,6 +2,6 @@
 policies: ./policies.yml
 
 plays:
-- name: "CMK Rotation"
-  policies:
-  - "ensure rotation for customer created CMKs is enabled"
+   - name: "CMK Rotation"
+     policies:
+       - "ensure rotation for customer created CMKs is enabled"
