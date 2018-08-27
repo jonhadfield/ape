@@ -1,6 +1,6 @@
 ---
 policies:
-  - name: "recent root password usage "
+  - name: "recent root password usage"
     severity: "low"
     resource: iam:User
     filters:
