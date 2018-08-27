@@ -1,6 +1,6 @@
 
 # ape: AWS account scanner
-[![CircleCI](https://circleci.com/gh/jonhadfield/ape/tree/master.svg?style=shield&circle-token=16e5cf0096cd4f6c7894e10f25b51e07746fa0b7)](https://circleci.com/gh/jonhadfield/ape/tree/master)
+[![CircleCI](https://circleci.com/gh/jonhadfield/ape/tree/master.svg?style=shield&circle-token=16e5cf0096cd4f6c7894e10f25b51e07746fa0b7)](https://circleci.com/gh/jonhadfield/ape/tree/master) [![Go Report Card](https://goreportcard.com/badge/github.com/jonhadfield/ape)](https://goreportcard.com/report/github.com/jonhadfield/ape)
 
 - [about](#about)
 - [quickstart](#quickstart)
