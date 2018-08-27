@@ -4,6 +4,8 @@
 // presets-files/aws/policies.yml
 // presets-files/cis-foundations/playbook.yml
 // presets-files/cis-foundations/policies.yml
+// presets-files/kms/playbook.yml
+// presets-files/kms/policies.yml
 // DO NOT EDIT!
 
 package presets
@@ -151,6 +153,46 @@ func presetsFilesCisFoundationsPoliciesYml() (*asset, error) {
 	return a, nil
 }
 
+var _presetsFilesKmsPlaybookYml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x3c\xcb\x21\x0e\xc3\x30\x0c\x46\x61\xee\x53\xfc\x0a\x77\xc7\x43\x0b\xab\x92\xdd\xc0\x4b\x3d\x29\x52\x12\x57\x76\x0a\x7a\xfb\x91\x6d\xec\x81\xf7\x31\x33\x9d\xd6\x6a\xa9\x1a\x19\xcb\xe3\xd7\xcb\xdd\x1b\xd1\xd9\xe4\x8e\x4c\x8c\x21\x5d\x33\xd2\xba\x6f\x78\xda\x94\x59\x6d\x24\x02\xfe\x92\x00\x46\xd2\x11\x97\x2b\xfc\x7b\xe0\x6d\x8e\x72\xc5\xb4\xae\x8e\xe2\x2a\x53\x0f\xac\xfb\x16\xa8\x01\x1d\xf2\x6a\x7a\xa4\x4f\x00\x00\x00\xff\xff\x21\x3a\x43\x45\x82\x00\x00\x00")
+
+func presetsFilesKmsPlaybookYmlBytes() ([]byte, error) {
+	return bindataRead(
+		_presetsFilesKmsPlaybookYml,
+		"presets-files/kms/playbook.yml",
+	)
+}
+
+func presetsFilesKmsPlaybookYml() (*asset, error) {
+	bytes, err := presetsFilesKmsPlaybookYmlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "presets-files/kms/playbook.yml", size: 130, mode: os.FileMode(420), modTime: time.Unix(1535383203, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _presetsFilesKmsPoliciesYml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\x8e\x3b\x6a\x03\x41\x10\x44\xf3\x3d\x45\x31\xf9\x5e\x60\x52\xe1\x68\x51\xe2\x1b\xb4\x67\x6b\x4d\xe3\xf9\x98\xee\x1e\xc1\xde\xde\x48\x56\x60\xb0\xd2\x82\x57\xef\xad\xeb\xba\x7c\x8f\xaa\x45\xe9\x79\x01\x56\x74\x69\xcc\x48\xec\x3e\x8d\xb0\x11\x12\x3a\x3a\x8e\x61\x28\xd3\x63\x34\x1a\x8a\x51\x82\x3b\x2e\xd7\xcd\xa1\x0e\x76\xf9\xa8\xdc\xd3\x02\x00\xce\x1b\x4d\xe3\xcc\x48\x8d\xbb\xce\xf6\x3b\x1b\x7d\x4c\x2b\xcc\xf8\x6a\x9e\x37\x9e\x8f\xf5\xd0\x1a\xb4\x87\xfa\x2e\x2f\xa6\x41\xd3\xd1\x33\xd2\xc6\xf3\xfd\x69\x7f\xfb\xfb\x0f\xdc\xa4\xce\x7b\xe3\x21\xd5\x99\x5e\xa0\x97\x67\xe8\x55\xba\x7c\xfe\xe7\xc2\x26\xd3\x4f\x00\x00\x00\xff\xff\xda\x19\xed\x21\xfa\x00\x00\x00")
+
+func presetsFilesKmsPoliciesYmlBytes() ([]byte, error) {
+	return bindataRead(
+		_presetsFilesKmsPoliciesYml,
+		"presets-files/kms/policies.yml",
+	)
+}
+
+func presetsFilesKmsPoliciesYml() (*asset, error) {
+	bytes, err := presetsFilesKmsPoliciesYmlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "presets-files/kms/policies.yml", size: 250, mode: os.FileMode(420), modTime: time.Unix(1535383325, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -207,6 +249,8 @@ var _bindata = map[string]func() (*asset, error){
 	"presets-files/aws/policies.yml": presetsFilesAwsPoliciesYml,
 	"presets-files/cis-foundations/playbook.yml": presetsFilesCisFoundationsPlaybookYml,
 	"presets-files/cis-foundations/policies.yml": presetsFilesCisFoundationsPoliciesYml,
+	"presets-files/kms/playbook.yml": presetsFilesKmsPlaybookYml,
+	"presets-files/kms/policies.yml": presetsFilesKmsPoliciesYml,
 }
 
 // AssetDir returns the file names below a certain
@@ -257,6 +301,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"cis-foundations": &bintree{nil, map[string]*bintree{
 			"playbook.yml": &bintree{presetsFilesCisFoundationsPlaybookYml, map[string]*bintree{}},
 			"policies.yml": &bintree{presetsFilesCisFoundationsPoliciesYml, map[string]*bintree{}},
+		}},
+		"kms": &bintree{nil, map[string]*bintree{
+			"playbook.yml": &bintree{presetsFilesKmsPlaybookYml, map[string]*bintree{}},
+			"policies.yml": &bintree{presetsFilesKmsPoliciesYml, map[string]*bintree{}},
 		}},
 	}},
 }}
