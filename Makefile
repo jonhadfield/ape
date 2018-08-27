@@ -14,14 +14,14 @@ setup:
 	go get -u github.com/olekukonko/tablewriter
 	go get -u github.com/aws/aws-sdk-go
 	go get -u github.com/alecthomas/gometalinter
-	go get -u github.com/pierrre/gotestcover
 	go get -u golang.org/x/tools/cmd/cover
 	go get -u github.com/360EntSecGroup-Skylar/excelize
 	go get -u github.com/jteeuwen/go-bindata/...
 	gometalinter --install
 
 test:
-	gotestcover $(TEST_OPTIONS) -covermode=atomic -coverprofile=coverage.txt $(SOURCE_FILES) -run $(TEST_PATTERN) -timeout=30s
+	echo 'mode: atomic' > coverage.txt && go list ./... | xargs -n1 -I{} sh -c 'go test -v -timeout=600s -covermode=atomic -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.txt' && rm coverage.tmp
+
 
 cover: test
 	go tool cover -html=coverage.txt
