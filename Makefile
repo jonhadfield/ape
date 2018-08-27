@@ -45,8 +45,6 @@ lint:
 		--enable=staticcheck \
 		--enable=unparam\
 		--enable=varcheck \
-		--enable=gosec \
-		--enable=dupl \
 		--enable=structcheck \
 		--enable=vetshadow \
 		--deadline=10m \
