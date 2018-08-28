@@ -59,6 +59,44 @@ func getSysLogger(level string) (l *srslog.Writer, err error) {
 	return
 }
 
+func processFileLogger(inLoggers []interface{}, filePath string) (outLoggers []interface{}, err error) {
+	var file *os.File
+	file, err = os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	var fLogger = golog.MustGetLogger("example")
+	fileBackend := golog.NewLogBackend(file, "", 0)
+	var format = golog.MustStringFormatter(
+		`%{time:2006-01-02T15:04:05-07:00} [%{level}] %{message}`,
+	)
+
+	fileBackendFormatter := golog.NewBackendFormatter(fileBackend, format)
+	// Only errors and more severe messages should be sent to backend2
+	fileBackendLeveled := golog.AddModuleLevel(fileBackendFormatter)
+
+	switch strings.ToLower(*logLevel) {
+	case "debug":
+		fileBackendLeveled.SetLevel(golog.DEBUG, "")
+	case "info":
+		fileBackendLeveled.SetLevel(golog.INFO, "")
+	case "notice":
+		fileBackendLeveled.SetLevel(golog.NOTICE, "")
+	case "warn":
+		fileBackendLeveled.SetLevel(golog.WARNING, "")
+	case "error":
+		fileBackendLeveled.SetLevel(golog.ERROR, "")
+	case "critical":
+		fileBackendLeveled.SetLevel(golog.CRITICAL, "")
+	}
+	// Set the backends to be used and the default level.
+	fLogger.SetBackend(fileBackendLeveled)
+	if err == nil {
+		outLoggers = append(inLoggers, fLogger)
+	} else {
+		h.OutputError(err)
+		os.Exit(1)
+	}
+	return
+}
+
 var (
 	playbookFilePathArg = kingpin.Arg("playbook", "playbook file path").Default("playbook.yml").String()
 	accountsFilePathArg = kingpin.Flag("accounts", "accounts file path").String()
@@ -129,44 +167,6 @@ Commands:
 // overwritten at build time
 var version, versionOutput, tag, sha, buildDate string
 
-func processFileLogger(inLoggers []interface{}, filePath string) (outLoggers []interface{}, err error) {
-	var file *os.File
-	file, err = os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	var fLogger = golog.MustGetLogger("example")
-	fileBackend := golog.NewLogBackend(file, "", 0)
-	var format = golog.MustStringFormatter(
-		`%{time:2006-01-02T15:04:05-07:00} [%{level}] %{message}`,
-	)
-
-	fileBackendFormatter := golog.NewBackendFormatter(fileBackend, format)
-	// Only errors and more severe messages should be sent to backend2
-	fileBackendLeveled := golog.AddModuleLevel(fileBackendFormatter)
-
-	switch strings.ToLower(*logLevel) {
-	case "debug":
-		fileBackendLeveled.SetLevel(golog.DEBUG, "")
-	case "info":
-		fileBackendLeveled.SetLevel(golog.INFO, "")
-	case "notice":
-		fileBackendLeveled.SetLevel(golog.NOTICE, "")
-	case "warn":
-		fileBackendLeveled.SetLevel(golog.WARNING, "")
-	case "error":
-		fileBackendLeveled.SetLevel(golog.ERROR, "")
-	case "critical":
-		fileBackendLeveled.SetLevel(golog.CRITICAL, "")
-	}
-	// Set the backends to be used and the default level.
-	fLogger.SetBackend(fileBackendLeveled)
-	if err == nil {
-		outLoggers = append(inLoggers, fLogger)
-	} else {
-		h.OutputError(err)
-		os.Exit(1)
-	}
-	return
-}
-
 func getPlaybookFilePath(path string) (result string, err error) {
 	if _, fErr := os.Stat(path); !os.IsNotExist(fErr) {
 		result = path
@@ -178,6 +178,23 @@ func getPlaybookFilePath(path string) (result string, err error) {
 		err = errors.Errorf("playbook file '%s' could not be found", path)
 	}
 	return
+}
+
+func mergePlaybookContent(allPlaybooksContent, tempPlaybook []byte) []byte {
+	pbLines := strings.SplitAfter(string(tempPlaybook), "\n")
+	for _, line := range pbLines {
+		strippedLine := strings.Replace(line, " ", "", -1)
+		if strippedLine == "" ||
+			strings.Contains(strippedLine, "---") ||
+			strings.Contains(strippedLine, "./policies.yml") ||
+			strings.Contains(strippedLine, "plays:") ||
+			strippedLine == "plays:" {
+			continue
+		} else {
+			allPlaybooksContent = append(allPlaybooksContent, line...)
+		}
+	}
+	return allPlaybooksContent
 }
 
 func processSpecifiedRegions(regions *string) (selectedRegions []string) {
@@ -208,6 +225,21 @@ func processSpecifiedRegions(regions *string) (selectedRegions []string) {
 		os.Exit(1)
 	}
 	return
+}
+
+func mergePoliciesContent(allPoliciesContent, tempPolicies []byte) []byte {
+	poLines := strings.SplitAfter(string(tempPolicies), "\n")
+	for _, line := range poLines {
+		strippedLine := strings.Replace(line, " ", "", -1)
+		if strippedLine == "" ||
+			strings.Contains(strippedLine, "---") ||
+			strings.Contains(strippedLine, "policies:") {
+			continue
+		} else {
+			allPoliciesContent = append(allPoliciesContent, line...)
+		}
+	}
+	return allPoliciesContent
 }
 
 func main() {
@@ -303,33 +335,11 @@ func main() {
 					allPlaybooksContent, allPoliciesContent = presets.Load(loggers, presetName)
 				} else {
 					// strip headers for playbook and policies
-					//var pb, pol string
 					tempPlaybook, tempPolicies := presets.Load(loggers, presetName)
-					pbLines := strings.SplitAfter(string(tempPlaybook), "\n")
-					poLines := strings.SplitAfter(string(tempPolicies), "\n")
 
-					for _, line := range pbLines {
-						strippedLine := strings.Replace(line, " ", "", -1)
-						if strippedLine == "" ||
-							strings.Contains(strippedLine, "---") ||
-							strings.Contains(strippedLine, "./policies.yml") ||
-							strings.Contains(strippedLine, "plays:") ||
-							strippedLine == "plays:" {
-							continue
-						} else {
-							allPlaybooksContent = append(allPlaybooksContent, line...)
-						}
-					}
-					for _, line := range poLines {
-						strippedLine := strings.Replace(line, " ", "", -1)
-						if strippedLine == "" ||
-							strings.Contains(strippedLine, "---") ||
-							strings.Contains(strippedLine, "policies:") {
-							continue
-						} else {
-							allPoliciesContent = append(allPoliciesContent, line...)
-						}
-					}
+					allPlaybooksContent = mergePlaybookContent(allPlaybooksContent, tempPlaybook)
+
+					allPoliciesContent = mergePoliciesContent(allPoliciesContent, tempPolicies)
 
 				}
 				playbookFileContent = allPlaybooksContent

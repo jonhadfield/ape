@@ -24,7 +24,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func GetResourceParts(input string) (service string, resource string, err error) {
+func GetResourceParts(input string) (service, resource string, err error) {
 	colonPos := strings.Index(input, ":")
 	if colonPos < 2 {
 		err = errors.WithMessage(err, fmt.Sprintf("missing colon or invalid resource: %s", input))
@@ -35,7 +35,7 @@ func GetResourceParts(input string) (service string, resource string, err error)
 	return
 }
 
-func GetignoredResourceParts(input string) (accountID string, region string, service string, resource string, resourceID string, err error) {
+func GetignoredResourceParts(input string) (accountID, region, service, resource, resourceID string, err error) {
 	// <acc id>:<region:<service>:<resource>:<resource-id>
 	numColons := strings.Count(input, ":")
 	if numColons != 4 {

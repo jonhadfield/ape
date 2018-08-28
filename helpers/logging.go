@@ -55,7 +55,7 @@ func Critical(loggrs []interface{}, message string) {
 	pushDirector("critical", message, loggrs)
 }
 
-func pushSyslog(level string, message string, sysLogger *syslog.Writer) {
+func pushSyslog(level, message string, sysLogger *syslog.Writer) {
 	switch level {
 	case "debug":
 		_ = sysLogger.Debug(message)
@@ -72,7 +72,7 @@ func pushSyslog(level string, message string, sysLogger *syslog.Writer) {
 	}
 }
 
-func pushFile(level string, message string, fileLogger *golog.Logger) {
+func pushFile(level, message string, fileLogger *golog.Logger) {
 	switch level {
 	case "debug":
 		fileLogger.Debug(message)
@@ -89,7 +89,7 @@ func pushFile(level string, message string, fileLogger *golog.Logger) {
 	}
 }
 
-func pushDirector(level string, message string, loggrs []interface{}) {
+func pushDirector(level, message string, loggrs []interface{}) {
 	for _, loggr := range loggrs {
 		if sysLogger, isSyslog := loggr.(*syslog.Writer); isSyslog {
 			pushSyslog(level, message, sysLogger)

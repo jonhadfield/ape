@@ -46,7 +46,7 @@ func StringInSliceContents(a string, list []string) bool {
 	return false
 }
 
-func PadToWidth(input string, char string, inputLengthOverride int, trimToWidth bool) (output string) {
+func PadToWidth(input, char string, inputLengthOverride int, trimToWidth bool) (output string) {
 	// Split string into lines
 	var lines []string
 	var newLines []string
@@ -95,7 +95,7 @@ func PadToWidth(input string, char string, inputLengthOverride int, trimToWidth 
 	return
 }
 
-func GetStringInBetween(str string, start string, end string) (result string) {
+func GetStringInBetween(str, start, end string) (result string) {
 	s := strings.Index(str, start)
 	if s == -1 {
 		return

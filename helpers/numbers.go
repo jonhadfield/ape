@@ -31,7 +31,7 @@ func ToInt64(input interface{}) (output int64, err error) {
 	return
 }
 
-func NumBetween(value int64, floor int64, ceiling int64) (result bool) {
+func NumBetween(value, floor, ceiling int64) (result bool) {
 	if value >= floor && value <= ceiling {
 		result = true
 	}

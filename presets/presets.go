@@ -105,7 +105,7 @@ func Generate(l []interface{}, name string) {
 	os.Exit(0)
 }
 
-func Load(l []interface{}, name string) (playbookData []byte, policiesData []byte) {
+func Load(l []interface{}, name string) (playbookData, policiesData []byte) {
 	var err error
 	if _, ok := presetList[name]; ok {
 		playbookPath := fmt.Sprintf("presets-files/%s/playbook.yml", name)

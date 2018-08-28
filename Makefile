@@ -30,7 +30,7 @@ fmt:
 	find . -name '*.go' -not -wholename './presets/presets-data.go' -not -wholename './vendor/*' | while read -r file; do gofmt -w -s "$$file"; goimports -w "$$file"; done
 
 critic:
-	gocritic check-package github.com/jonhadfield/ape
+	gocritic check-project .
 
 lint:
 	gometalinter -e testing.go -e validation_test.go -e presets-data.go --vendor --disable-all \
@@ -74,8 +74,6 @@ build-all: fmt data
 	GOOS=openbsd CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/ape_openbsd_amd64" cmd/ape/main.go
 	GOOS=freebsd CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/ape_freebsd_amd64" cmd/ape/main.go
 
-critic:
-	gocritic check-package github.com/jonhadfield/ape
 install:
 	go install ./cmd/...
 
