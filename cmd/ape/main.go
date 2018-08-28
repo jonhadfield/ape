@@ -293,7 +293,53 @@ func main() {
 	// load from preset if specified
 	if *runPreset != "" {
 		var playbookFileContent, policiesFileContent []byte
-		playbookFileContent, policiesFileContent = presets.Load(loggers, *runPreset)
+		// are multiple specified?
+		if strings.Contains(*runPreset, ",") {
+			presetNames := strings.Split(*runPreset, ",")
+			// get the first lot and then append the rest with their header text stripped
+			var allPlaybooksContent, allPoliciesContent []byte
+			for i, presetName := range presetNames {
+				if i == 0 {
+					allPlaybooksContent, allPoliciesContent = presets.Load(loggers, presetName)
+				} else {
+					// strip headers for playbook and policies
+					//var pb, pol string
+					tempPlaybook, tempPolicies := presets.Load(loggers, presetName)
+					pbLines := strings.SplitAfter(string(tempPlaybook), "\n")
+					poLines := strings.SplitAfter(string(tempPolicies), "\n")
+
+					for _, line := range pbLines {
+						strippedLine := strings.Replace(line, " ", "", -1)
+						if strippedLine == "" ||
+							strings.Contains(strippedLine, "---") ||
+							strings.Contains(strippedLine, "./policies.yml") ||
+							strings.Contains(strippedLine, "plays:") ||
+							strippedLine == "plays:" {
+							continue
+						} else {
+							allPlaybooksContent = append(allPlaybooksContent, line...)
+						}
+					}
+					for _, line := range poLines {
+						strippedLine := strings.Replace(line, " ", "", -1)
+						if strippedLine == "" ||
+							strings.Contains(strippedLine, "---") ||
+							strings.Contains(strippedLine, "policies:") {
+							continue
+						} else {
+							allPoliciesContent = append(allPoliciesContent, line...)
+						}
+					}
+
+				}
+				playbookFileContent = allPlaybooksContent
+				policiesFileContent = allPoliciesContent
+
+			}
+		} else {
+			playbookFileContent, policiesFileContent = presets.Load(loggers, *runPreset)
+		}
+
 		if len(playbookFileContent) > 0 {
 			config.Playbook, err = ape.ParsePlaybookFileContent(playbookFileContent)
 			if err != nil {

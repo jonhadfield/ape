@@ -183,7 +183,8 @@ func getHigherSeverity(one, two string) string {
 func getIssuesSummary(enforcePlanOutput enforcePlanOutput) (summary issuesSummary) {
 	for _, planItemOutput := range enforcePlanOutput {
 		for _, policyOutput := range planItemOutput {
-			for _, policyOutputItem := range policyOutput {
+			for i := range policyOutput {
+				policyOutputItem := policyOutput[i]
 				if !reflect.DeepEqual(policyOutputItem, enforcePolicyOutputItem{}) {
 					if policyOutputItem.IssuesFound {
 						switch strings.ToLower(policyOutputItem.Severity) {
@@ -401,7 +402,8 @@ func (p plan) Enforce(l []interface{}, input EnforcePlanInput) (failures bool, e
 	var reportAccount bool
 	var newSess *session.Session
 	// Loop through plan
-	for _, planItem := range p {
+	for i := range p {
+		planItem := p[i]
 		// if account id is specified then we're using multiple accounts and know credentials will be assumed
 		if planItem.Target.AccountID != "" {
 			// if plan item is for same account as before, then reuse, otherwise clear caches and assume new role

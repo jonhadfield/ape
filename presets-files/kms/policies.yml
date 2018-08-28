@@ -1,0 +1,10 @@
+---
+policies:
+  - name: "ensure rotation for customer created CMKs is enabled"
+    severity: "medium"
+    resource: kms:Key
+    filters:
+    - criterion: "KeyRotationEnabled"
+      value: "false"
+    - criterion: "CustomerManaged"
+      value: "true"

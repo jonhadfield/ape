@@ -300,7 +300,7 @@ func getEc2Tag(tags []*ec2.Tag, key string) (value string) {
 var ec2ClientByAccountAndRegion map[string]ec2iface.EC2API
 var ec2ClientByAccountAndRegionMutex sync.Mutex
 
-func getEC2Client(session *session.Session, accID string, region string) (output ec2iface.EC2API) {
+func getEC2Client(session *session.Session, accID, region string) (output ec2iface.EC2API) {
 	ec2ClientByAccountAndRegionMutex.Lock()
 	if ec2ClientByAccountAndRegion == nil {
 		ec2ClientByAccountAndRegion = make(map[string]ec2iface.EC2API)
@@ -359,7 +359,8 @@ func enforceVolumePolicy(l []interface{},
 	// Loop through regions
 	var filtersMatch bool
 	var anyFiltersMatch bool
-	for _, volume := range volumes {
+	for i := range volumes {
+		volume := volumes[i]
 		var filterMatch bool
 		if isIgnored(isIgnoredInput{
 			planItem:    planItem,
@@ -406,7 +407,7 @@ type secGroupPerm struct {
 }
 
 func combineSecGroupPermissions(securityGroup ec2.SecurityGroup) (allSecGroupPerms []secGroupPerm,
-	hasAnyRules bool, hasAnyIngressRules bool, hasAnyEgressRules bool) {
+	hasAnyRules, hasAnyIngressRules, hasAnyEgressRules bool) {
 	for _, i := range securityGroup.IpPermissions {
 		hasAnyRules = true
 		hasAnyIngressRules = true
@@ -464,7 +465,8 @@ func enforceSecurityGroupPolicy(l []interface{}, session *session.Session,
 
 	var anyFiltersMatch bool
 SecGroup:
-	for _, secGroup := range secGroups {
+	for i := range secGroups {
+		secGroup := secGroups[i]
 		var identifiers = []string{*secGroup.securityGroup.GroupId, *secGroup.securityGroup.GroupName}
 		if isIgnored(isIgnoredInput{
 			planItem:    planItem,
@@ -711,7 +713,8 @@ func enforceInstancePolicy(l []interface{}, session *session.Session,
 	// Loop through regions
 	var filtersMatch, anyFiltersMatch bool
 	var details []enforcePolicyOutputItemDetail
-	for _, instance := range allEC2InstancesByAccount[planItem.Target.AccountID] {
+	for i := range allEC2InstancesByAccount[planItem.Target.AccountID] {
+		instance := allEC2InstancesByAccount[planItem.Target.AccountID][i]
 		if isIgnored(isIgnoredInput{
 			planItem:    planItem,
 			resourceIDs: []string{getNameTag(instance.instance.Tags), *instance.instance.InstanceId},

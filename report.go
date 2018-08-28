@@ -146,9 +146,11 @@ func (po enforcePlanOutput) printToMDTable(l []interface{}) (err error) {
 	var moreThanOneAccount bool
 	var lastAccountID string
 	// Check if single account or multiple
-	for _, planItem := range po {
+	for i := range po {
+		planItem := po[i]
 		for _, ePO := range planItem {
-			for _, ePOI := range ePO {
+			for j := range ePO {
+				ePOI := ePO[j]
 				if lastAccountID != "" && ePOI.AccountID != lastAccountID {
 					moreThanOneAccount = true
 					goto OUTPUT
@@ -162,7 +164,8 @@ OUTPUT:
 	if !moreThanOneAccount {
 		for _, planItem := range po {
 			for _, ePO := range planItem {
-				for _, ePOI := range ePO {
+				for i := range ePO {
+					ePOI := ePO[i]
 					var severity string
 					severity, err = getSeverity(&ePOI)
 					output := ePOI.createReportLine()
@@ -183,7 +186,8 @@ OUTPUT:
 	} else {
 		for _, planItem := range po {
 			for _, ePO := range planItem {
-				for _, ePOI := range ePO {
+				for i := range ePO {
+					ePOI := ePO[i]
 					accountOutput := fmt.Sprintf("%s (%s)", ePOI.AccountID, ePOI.AccountAlias)
 					var severity string
 					severity, err = getSeverity(&ePOI)
@@ -224,7 +228,8 @@ func (po enforcePlanOutput) generateXLSXData(l []interface{}) (data []dataRow) {
 	h.Debug(l, "generating XLSX data")
 	for _, planItem := range po {
 		for _, ePO := range planItem {
-			for _, ePOItem := range ePO {
+			for i := range ePO {
+				ePOItem := ePO[i]
 				var result string
 				if !ePOItem.IssuesFound {
 					result = "OK"
@@ -353,7 +358,8 @@ func (po enforcePlanOutput) postResultsToSlack(l []interface{}, slack r.Slack) (
 		for _, ePO := range planItem {
 			var lastItem, finalItem enforcePolicyOutputItem
 			var printFinal bool
-			for count, enforcePOItem := range ePO {
+			for count := range ePO {
+				enforcePOItem := ePO[count]
 				if enforcePOItem.IssuesFound && severities[enforcePOItem.Severity] >= severities[slack.Threshold] {
 					ItemID = enforcePOItem.PolicyName + enforcePOItem.AccountID
 					lastItemID = lastItem.PolicyName + lastItem.AccountID
@@ -567,7 +573,8 @@ func reportItem(item enforcePlanItemOutput, reportAccount bool) {
 
 	var lastPolicyName string
 	for _, ePO := range item {
-		for _, ePOItem := range ePO {
+		for i := range ePO {
+			ePOItem := ePO[i]
 			var justAffectedResource bool
 			if (ePOItem.ResourceArn != "" || ePOItem.Message != "") && !ePOItem.IssuesFound && ePOItem.PolicyName == lastPolicyName {
 				justAffectedResource = true

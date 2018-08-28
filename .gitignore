@@ -40,3 +40,6 @@ playbook_single
 
 # Local build
 .local_dist/ape*
+
+# project
+.idea

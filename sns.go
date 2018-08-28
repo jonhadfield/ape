@@ -29,7 +29,7 @@ import (
 var snsClientByAccountAndRegion map[string]snsiface.SNSAPI
 var snsClientByAccountAndRegionMutex sync.Mutex
 
-func getSNSClient(l []interface{}, session *session.Session, accID string, region string) (output snsiface.SNSAPI) {
+func getSNSClient(l []interface{}, session *session.Session, accID, region string) (output snsiface.SNSAPI) {
 	snsClientByAccountAndRegionMutex.Lock()
 	if snsClientByAccountAndRegion == nil {
 		snsClientByAccountAndRegion = make(map[string]snsiface.SNSAPI)

@@ -97,7 +97,7 @@ func getAllRegionsForService(service string) (result []string) {
 	return
 }
 
-func isServiceImplementedInRegion(service string, region string) (result string) {
+func isServiceImplementedInRegion(service, region string) (result string) {
 	result = "no"
 	if h.StringInSlice(service, globalServices) {
 		result = "global"
@@ -266,14 +266,16 @@ func CreatePlan(loggers []interface{}, input *CreatePlanInput) (output CreatePla
 				return
 			}
 			for _, target := range targets {
-				for _, itemPolicy := range itemPolicies {
+				for i := range itemPolicies {
+					itemPolicy := itemPolicies[i]
 					processedItemPolicies, err = processItemPolicy(itemPolicy, playRegionsSpecified, play, target, input.Args)
 					planList = append(planList, processedItemPolicies)
 				}
 
 			}
 		} else {
-			for _, itemPolicy := range itemPolicies {
+			for i := range itemPolicies {
+				itemPolicy := itemPolicies[i]
 				processedItemPolicies, err = processItemPolicy(itemPolicy, playRegionsSpecified, play, planItemTarget{}, input.Args)
 				planList = append(planList, processedItemPolicies)
 			}

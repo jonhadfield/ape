@@ -81,7 +81,8 @@ type accessKey struct {
 type accessKeys []accessKey
 
 func getReportItemByArn(arn string, report credentialReport) (result credentialReportItem) {
-	for _, item := range report {
+	for i := range report {
+		item := report[i]
 		if item.Arn == arn {
 			result = item
 			break
@@ -91,7 +92,8 @@ func getReportItemByArn(arn string, report credentialReport) (result credentialR
 }
 
 func getReportItemByUserName(userName string, report credentialReport) (result credentialReportItem) {
-	for _, item := range report {
+	for i := range report {
+		item := report[i]
 		if item.User == userName {
 			result = item
 			break
@@ -1168,7 +1170,8 @@ func enforceUserPolicy(l []interface{}, svc iamiface.IAMAPI, planItem PlanItem) 
 	}
 
 	var anyFiltersMatch bool
-	for _, user := range users {
+	for i := range users {
+		user := users[i]
 		if isIgnored(isIgnoredInput{
 			planItem:    planItem,
 			resourceIDs: []string{*user.Arn, *user.UserId, *user.UserName},
@@ -1514,7 +1517,7 @@ func parseIAMPolicyDocument(document string) (statements []ri.PolicyStatement, e
 				}
 				resources = append(resources, multipleResources...)
 			} else {
-				resources = append(resources, singleResource[:])
+				resources = append(resources, singleResource)
 			}
 		}
 
@@ -1532,7 +1535,7 @@ func parseIAMPolicyDocument(document string) (statements []ri.PolicyStatement, e
 				}
 				actions = append(actions, multipleActions...)
 			} else {
-				actions = append(actions, singleAction[:])
+				actions = append(actions, singleAction)
 			}
 		}
 

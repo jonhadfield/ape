@@ -66,7 +66,7 @@ var noKmsKeysByAccountID map[string]bool
 var kmsClientByAccountAndRegion map[string]kmsiface.KMSAPI
 var kmsClientByAccountAndRegionMutex sync.Mutex
 
-func getKMSClient(session *session.Session, accID string, region string) (output kmsiface.KMSAPI) {
+func getKMSClient(session *session.Session, accID, region string) (output kmsiface.KMSAPI) {
 	kmsClientByAccountAndRegionMutex.Lock()
 	if kmsClientByAccountAndRegion == nil {
 		kmsClientByAccountAndRegion = make(map[string]kmsiface.KMSAPI)

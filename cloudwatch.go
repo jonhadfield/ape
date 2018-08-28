@@ -34,7 +34,7 @@ import (
 var cloudwatchClientByAccountAndRegion map[string]cloudwatchiface.CloudWatchAPI
 var cloudwatchClientByAccountAndRegionMutex sync.Mutex
 
-func getCloudwatchClient(l []interface{}, session *session.Session, accID string, region string) (output cloudwatchiface.CloudWatchAPI) {
+func getCloudwatchClient(l []interface{}, session *session.Session, accID, region string) (output cloudwatchiface.CloudWatchAPI) {
 	cloudwatchClientByAccountAndRegionMutex.Lock()
 	if cloudwatchClientByAccountAndRegion == nil {
 		h.Debug(l, "initialising cloudwatchClientByAccountAndRegion")
@@ -55,7 +55,7 @@ func getCloudwatchClient(l []interface{}, session *session.Session, accID string
 var cloudwatchLogsClientByAccountAndRegion map[string]cloudwatchlogsiface.CloudWatchLogsAPI
 var cloudwatchLogsClientByAccountAndRegionMutex sync.Mutex
 
-func getCloudwatchLogsClient(l []interface{}, session *session.Session, accID string, region string) (output cloudwatchlogsiface.CloudWatchLogsAPI) {
+func getCloudwatchLogsClient(l []interface{}, session *session.Session, accID, region string) (output cloudwatchlogsiface.CloudWatchLogsAPI) {
 	cloudwatchLogsClientByAccountAndRegionMutex.Lock()
 	if cloudwatchLogsClientByAccountAndRegion == nil {
 		h.Debug(l, "initialising cloudwatchLogsClientByAccountAndRegion")

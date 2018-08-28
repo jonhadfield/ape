@@ -48,7 +48,7 @@ import (
 var cloudtrailClientByAccountAndRegion map[string]cloudtrailiface.CloudTrailAPI
 var cloudtrailClientByAccountAndRegionMutex sync.Mutex
 
-func getCloudtrailClient(l []interface{}, session *session.Session, accID string, region string) (output cloudtrailiface.CloudTrailAPI) {
+func getCloudtrailClient(l []interface{}, session *session.Session, accID, region string) (output cloudtrailiface.CloudTrailAPI) {
 	h.Debug(l, fmt.Sprintf("getting cloudtrail client for: %s", accID))
 	cloudtrailClientByAccountAndRegionMutex.Lock()
 	if cloudtrailClientByAccountAndRegion == nil {
@@ -263,7 +263,7 @@ func filterBucketLoggingEnabled(l []interface{}, input filterBucketLoggingEnable
 	return
 }
 
-func getMetricFiltersByPatternAndLogGroupName(pattern string, logGroupName string, cwlSvc cloudwatchlogsiface.CloudWatchLogsAPI) (filters []*cloudwatchlogs.MetricFilter, err error) {
+func getMetricFiltersByPatternAndLogGroupName(pattern, logGroupName string, cwlSvc cloudwatchlogsiface.CloudWatchLogsAPI) (filters []*cloudwatchlogs.MetricFilter, err error) {
 	describeMetricFiltersInput := cloudwatchlogs.DescribeMetricFiltersInput{
 		LogGroupName: &logGroupName,
 	}
@@ -332,8 +332,8 @@ func filterMetricFilterPattern(l []interface{}, cwlSvc cloudwatchlogsiface.Cloud
 		if err != nil {
 			return
 		}
-		for _, alarm := range metricAlarms {
-			for _, action := range alarm.AlarmActions {
+		for i := range metricAlarms {
+			for _, action := range metricAlarms[i].AlarmActions {
 				var subscriptions []*sns.Subscription
 				subscriptions, err = getSubscriptionsByTopicArn(*snsSvc, *action)
 				if err != nil {
@@ -367,7 +367,8 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 
 	}
 	var anyFiltersMatch bool
-	for _, trail := range allTrailsByAccount[planItem.Target.AccountID] {
+	for i := range allTrailsByAccount[planItem.Target.AccountID] {
+		trail := allTrailsByAccount[planItem.Target.AccountID][i]
 		if isIgnored(isIgnoredInput{
 			planItem:    planItem,
 			resourceIDs: []string{*trail.trail.Name},
