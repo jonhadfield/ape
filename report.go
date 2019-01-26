@@ -18,13 +18,12 @@ package ape
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
-
-	"crypto/tls"
-	"strconv"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
 	"github.com/aws/aws-sdk-go/aws"
@@ -35,7 +34,7 @@ import (
 	r "github.com/jonhadfield/ape/root"
 	"github.com/olekukonko/tablewriter"
 	"github.com/pkg/errors"
-	"gopkg.in/gomail.v2"
+	gomail "gopkg.in/gomail.v2"
 )
 
 func ListSupported() {

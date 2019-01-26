@@ -26,7 +26,7 @@ import (
 	r "github.com/jonhadfield/ape/root"
 	"github.com/pkg/errors"
 	lev "github.com/texttheater/golang-levenshtein/levenshtein"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 func loadPolicies(policiesFilePath string) (policies r.Policies, err error) {

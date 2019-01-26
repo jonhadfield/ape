@@ -27,7 +27,7 @@ import (
 	r "github.com/jonhadfield/ape/root"
 	"github.com/pkg/errors"
 	"github.com/segmentio/ksuid"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (

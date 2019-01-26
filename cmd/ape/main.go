@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"github.com/RackSec/srslog"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"fmt"
 
@@ -35,7 +36,6 @@ import (
 	r "github.com/jonhadfield/ape/root"
 	golog "github.com/op/go-logging"
 	"github.com/pkg/errors"
-	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 func getSysLogger(level string) (l *srslog.Writer, err error) {

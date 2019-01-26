@@ -88,7 +88,7 @@ func presetsFilesAwsPlaybookYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "presets-files/aws/playbook.yml", size: 1391, mode: os.FileMode(420), modTime: time.Unix(1535407695, 0)}
+	info := bindataFileInfo{name: "presets-files/aws/playbook.yml", size: 1391, mode: os.FileMode(420), modTime: time.Unix(1548509295, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -108,7 +108,7 @@ func presetsFilesAwsPoliciesYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "presets-files/aws/policies.yml", size: 0, mode: os.FileMode(420), modTime: time.Unix(1533844447, 0)}
+	info := bindataFileInfo{name: "presets-files/aws/policies.yml", size: 0, mode: os.FileMode(420), modTime: time.Unix(1548509295, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -128,7 +128,7 @@ func presetsFilesCisFoundationsPlaybookYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "presets-files/cis-foundations/playbook.yml", size: 5570, mode: os.FileMode(420), modTime: time.Unix(1533844447, 0)}
+	info := bindataFileInfo{name: "presets-files/cis-foundations/playbook.yml", size: 5570, mode: os.FileMode(420), modTime: time.Unix(1548509295, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -148,7 +148,7 @@ func presetsFilesCisFoundationsPoliciesYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "presets-files/cis-foundations/policies.yml", size: 12925, mode: os.FileMode(420), modTime: time.Unix(1535407610, 0)}
+	info := bindataFileInfo{name: "presets-files/cis-foundations/policies.yml", size: 12925, mode: os.FileMode(420), modTime: time.Unix(1548509295, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -168,7 +168,7 @@ func presetsFilesKmsPlaybookYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "presets-files/kms/playbook.yml", size: 141, mode: os.FileMode(420), modTime: time.Unix(1535407437, 0)}
+	info := bindataFileInfo{name: "presets-files/kms/playbook.yml", size: 141, mode: os.FileMode(420), modTime: time.Unix(1548509295, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -188,7 +188,7 @@ func presetsFilesKmsPoliciesYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "presets-files/kms/policies.yml", size: 250, mode: os.FileMode(420), modTime: time.Unix(1535383325, 0)}
+	info := bindataFileInfo{name: "presets-files/kms/policies.yml", size: 250, mode: os.FileMode(420), modTime: time.Unix(1548509295, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

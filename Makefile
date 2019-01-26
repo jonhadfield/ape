@@ -3,21 +3,9 @@ TEST_PATTERN?=.
 TEST_OPTIONS?=-race -v
 
 setup:
-	go get -u github.com/pkg/errors
-	go get -u github.com/smartystreets/goconvey/convey
-	go get -u github.com/urfave/cli
-	go get -u github.com/mitchellh/gox
-	go get -u gopkg.in/yaml.v2
-	go get -u github.com/Knetic/govaluate
-	go get -u github.com/segmentio/ksuid
-	go get -u github.com/RackSec/srslog
-	go get -u github.com/olekukonko/tablewriter
-	go get -u github.com/aws/aws-sdk-go
-	go get -u github.com/alecthomas/gometalinter
+	go get -u github.com/a-urth/go-bindata
+	go get -u github.com/a-urth/go-bindata/...
 	go get -u golang.org/x/tools/cmd/cover
-	go get -u github.com/360EntSecGroup-Skylar/excelize
-	go get -u github.com/jteeuwen/go-bindata/...
-	gometalinter --install
 
 test:
 	echo 'mode: atomic' > coverage.txt && go list ./... | xargs -n1 -I{} sh -c 'go test -v -timeout=600s -covermode=atomic -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.txt' && rm coverage.tmp
