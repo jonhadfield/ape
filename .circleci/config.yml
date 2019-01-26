@@ -5,8 +5,10 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.9
-    working_directory: /go/src/github.com/jonhadfield/ape
+      - image: circleci/golang:1.11
+        environment:
+          GO111MODULE: "ON"
+    working_directory: /sn
     steps:
       - run: sudo apt-get install rsyslog -u
       - run: sudo service rsyslog start

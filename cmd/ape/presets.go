@@ -14,15 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with ape.  If not, see <http://www.gnu.org/licenses/>.
 
-package presets
+package main
 
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"io/ioutil"
 
 	h "github.com/jonhadfield/ape/helpers"
+	. "github.com/jonhadfield/ape/presets"
 	"github.com/pkg/errors"
 )
 
@@ -39,64 +41,86 @@ func List() {
 	os.Exit(0)
 }
 
-func Generate(l []interface{}, name string) {
+func Generate(l []interface{}, names string) {
 	var err error
-	if _, ok := presetList[name]; ok {
-		var playbookData, policiesData []byte
+	var allPlaybooksContent, allPoliciesContent []byte
+	nameList := strings.Split(names, ",")
+	for i, name := range nameList {
 		playbookPath := fmt.Sprintf("presets-files/%s/playbook.yml", name)
 		policiesPath := fmt.Sprintf("presets-files/%s/policies.yml", name)
-		playbookData, err = Asset(playbookPath)
+		if _, ok := presetList[name]; ok {
+			if i == 0 {
+				allPlaybooksContent, err = Asset(playbookPath)
+				if err != nil {
+					errMess := fmt.Sprintf("error: failed to generate playbook file for: '%s'", name)
+					h.Error(l, errMess)
+					h.OutputError(err)
+					os.Exit(1)
+				}
+				allPoliciesContent, err = Asset(policiesPath)
+				if err != nil {
+					errMess := fmt.Sprintf("error: failed to generate policies file for: '%s'", name)
+					h.Error(l, errMess)
+					h.OutputError(err)
+					os.Exit(1)
+				}
+			}
+		} else {
+			errMess := fmt.Sprintf("preset '%s' does not exist", name)
+			err = errors.New(errMess)
+			h.Error(l, errMess)
+			h.OutputError(err)
+			os.Exit(1)
+		}
+		var tempPlaybookData, tempPoliciesData []byte
+		tempPlaybookData, err = Asset(playbookPath)
 		if err != nil {
 			errMess := fmt.Sprintf("error: failed to generate playbook file for: '%s'", name)
 			h.Error(l, errMess)
 			h.OutputError(err)
 			os.Exit(1)
 		}
-		policiesData, err = Asset(policiesPath)
+		allPlaybooksContent = mergePlaybookContent(allPlaybooksContent, tempPlaybookData)
+
+		tempPoliciesData, err = Asset(policiesPath)
 		if err != nil {
 			errMess := fmt.Sprintf("error: failed to generate policies file for: '%s'", name)
 			h.Error(l, errMess)
 			h.OutputError(err)
 			os.Exit(1)
 		}
+		allPoliciesContent = mergePoliciesContent(allPoliciesContent, tempPoliciesData)
+	}
+	playbookOutputPath := "playbook.yml"
+	policiesOutputPath := "policies.yml"
 
-		playbookOutputPath := "playbook.yml"
-		policiesOutputPath := "policies.yml"
-
-		if _, err = os.Stat(playbookOutputPath); err == nil {
-			errMess := fmt.Sprintf("failed to generate playbook as '%s' "+
-				"already exists in this directory", playbookOutputPath)
-			err = errors.New(errMess)
-			h.Error(l, errMess)
-			h.OutputError(err)
-			os.Exit(1)
-		}
-		if _, err = os.Stat(policiesOutputPath); err == nil {
-			errMess := fmt.Sprintf("failed to generate policies as '%s' "+
-				"already exists in this directory", policiesOutputPath)
-			err = errors.New(errMess)
-			h.Error(l, errMess)
-			h.OutputError(err)
-			os.Exit(1)
-		}
-		err = ioutil.WriteFile(playbookOutputPath, playbookData, 0644)
-		if err != nil {
-			errMess := fmt.Sprintf("failed to write '%s'", playbookOutputPath)
-			err = errors.New(errMess)
-			h.Error(l, errMess)
-			h.OutputError(err)
-			os.Exit(1)
-		}
-		err = ioutil.WriteFile(policiesOutputPath, policiesData, 0644)
-		if err != nil {
-			errMess := fmt.Sprintf("failed to write '%s'", policiesOutputPath)
-			err = errors.New(errMess)
-			h.Error(l, errMess)
-			h.OutputError(err)
-			os.Exit(1)
-		}
-	} else {
-		errMess := fmt.Sprintf("preset '%s' does not exist", name)
+	if _, err = os.Stat(playbookOutputPath); err == nil {
+		errMess := fmt.Sprintf("failed to generate playbook as '%s' "+
+			"already exists in this directory", playbookOutputPath)
+		err = errors.New(errMess)
+		h.Error(l, errMess)
+		h.OutputError(err)
+		os.Exit(1)
+	}
+	if _, err = os.Stat(policiesOutputPath); err == nil {
+		errMess := fmt.Sprintf("failed to generate policies as '%s' "+
+			"already exists in this directory", policiesOutputPath)
+		err = errors.New(errMess)
+		h.Error(l, errMess)
+		h.OutputError(err)
+		os.Exit(1)
+	}
+	err = ioutil.WriteFile(playbookOutputPath, allPlaybooksContent, 0644)
+	if err != nil {
+		errMess := fmt.Sprintf("failed to write '%s'", playbookOutputPath)
+		err = errors.New(errMess)
+		h.Error(l, errMess)
+		h.OutputError(err)
+		os.Exit(1)
+	}
+	err = ioutil.WriteFile(policiesOutputPath, allPoliciesContent, 0644)
+	if err != nil {
+		errMess := fmt.Sprintf("failed to write '%s'", policiesOutputPath)
 		err = errors.New(errMess)
 		h.Error(l, errMess)
 		h.OutputError(err)

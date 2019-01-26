@@ -31,7 +31,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/jonhadfield/ape"
 	h "github.com/jonhadfield/ape/helpers"
-	"github.com/jonhadfield/ape/presets"
 	r "github.com/jonhadfield/ape/root"
 	golog "github.com/op/go-logging"
 	"github.com/pkg/errors"
@@ -115,7 +114,7 @@ var (
 	output              = kingpin.Flag("output", "lines, table, or none").Default("lines").String()
 	debug               = kingpin.Flag("debug", "enable: verbose-errors, stop-on-error, log-level=debug").Bool()
 	listPresets         = kingpin.Flag("list-presets", "list available presets").Bool()
-	generatePreset      = kingpin.Flag("generate-preset", "generate playbook and policies from presets-files").String()
+	generatePresets     = kingpin.Flag("generate-preset", "generate playbook and policies from presets-files").String()
 	runPreset           = kingpin.Flag("run-preset", "run a preset").String()
 	accessKeyID         = kingpin.Flag("access-key-id", "aws credential: access key id").String()
 	secretAccessKey     = kingpin.Flag("secret-access-key", "aws credential: secret access key").String()
@@ -262,7 +261,7 @@ func main() {
 	}
 
 	if *listPresets {
-		presets.List()
+		List()
 	}
 
 	if *verboseErrors {
@@ -281,8 +280,8 @@ func main() {
 		loggers = append(loggers, sysLogger)
 	}
 
-	if *generatePreset != "" {
-		presets.Generate(loggers, *generatePreset)
+	if *generatePresets != "" {
+		Generate(loggers, *generatePresets)
 	}
 
 	if *logFile != "" {
@@ -332,22 +331,19 @@ func main() {
 			var allPlaybooksContent, allPoliciesContent []byte
 			for i, presetName := range presetNames {
 				if i == 0 {
-					allPlaybooksContent, allPoliciesContent = presets.Load(loggers, presetName)
+					allPlaybooksContent, allPoliciesContent = Load(loggers, presetName)
 				} else {
 					// strip headers for playbook and policies
-					tempPlaybook, tempPolicies := presets.Load(loggers, presetName)
-
+					tempPlaybook, tempPolicies := Load(loggers, presetName)
 					allPlaybooksContent = mergePlaybookContent(allPlaybooksContent, tempPlaybook)
-
 					allPoliciesContent = mergePoliciesContent(allPoliciesContent, tempPolicies)
 
 				}
 				playbookFileContent = allPlaybooksContent
 				policiesFileContent = allPoliciesContent
-
 			}
 		} else {
-			playbookFileContent, policiesFileContent = presets.Load(loggers, *runPreset)
+			playbookFileContent, policiesFileContent = Load(loggers, *runPreset)
 		}
 
 		if len(playbookFileContent) > 0 {
