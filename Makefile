@@ -10,6 +10,8 @@ setup:
 test:
 	echo 'mode: atomic' > coverage.txt && go list ./... | xargs -n1 -I{} sh -c 'go test -v -timeout=600s -covermode=atomic -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.txt' && rm coverage.tmp
 
+mac-install: build
+	install .local_dist/ape_darwin_amd64 /usr/local/bin/ape
 
 cover: test
 	go tool cover -html=coverage.txt
