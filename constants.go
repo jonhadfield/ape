@@ -26,10 +26,10 @@ var (
 	}
 
 	badRegions = map[string][]string{
-		"ec2":        {"cn-north-1", "cn-northwest-1", "us-gov-west-1"},
-		"cloudtrail": {"cn-north-1", "cn-northwest-1", "us-gov-west-1"},
-		"config":     {"cn-north-1", "cn-northwest-1", "us-gov-west-1"},
-		"kms":        {"us-gov-west-1"},
+		"ec2":        {"cn-north-1", "cn-northwest-1", "us-gov-west-1", "us-gov-east-1"},
+		"cloudtrail": {"cn-north-1", "cn-northwest-1", "us-gov-west-1", "us-gov-east-1"},
+		"config":     {"cn-north-1", "cn-northwest-1", "us-gov-west-1", "us-gov-east-1"},
+		"kms":        {"us-gov-west-1", "us-gov-east-1"},
 	}
 )
 
