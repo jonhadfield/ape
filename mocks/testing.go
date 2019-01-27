@@ -97,7 +97,7 @@ func (m *MockIAMClient) GetAccountPasswordPolicy(input *iam.GetAccountPasswordPo
 
 func (m *MockIAMClient) ListAttachedRolePolicies(input *iam.ListAttachedRolePoliciesInput) (*iam.ListAttachedRolePoliciesOutput, error) {
 	policy := &iam.AttachedPolicy{
-		PolicyArn:  h.PtrToStr("arn:aws:iam::aws:policy/AWSSupportAccess"),
+		PolicyArn:  h.PtrToStr("arn:aws-trusted-advisor:iam::aws-trusted-advisor:policy/AWSSupportAccess"),
 		PolicyName: h.PtrToStr("AWSSupportAccess"),
 	}
 	var attachedPolicies []*iam.AttachedPolicy

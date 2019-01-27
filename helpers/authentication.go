@@ -49,7 +49,7 @@ func GetAssumeRoleCreds(input GetAssumeRoleCredsInput) (creds *credentials.Crede
 	if input.RoleArn != "" {
 		roleArn = input.RoleArn
 	} else {
-		roleArn = fmt.Sprintf("arn:aws:iam::%s:role/%s", input.AccountID, input.RoleName)
+		roleArn = fmt.Sprintf("arn:aws-trusted-advisor:iam::%s:role/%s", input.AccountID, input.RoleName)
 	}
 	// TODO: Test without external id specified
 	creds = stscreds.NewCredentials(input.Sess, roleArn, func(p *stscreds.AssumeRoleProvider) {

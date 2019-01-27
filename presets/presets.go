@@ -29,7 +29,8 @@ import (
 var presetList = map[string]string{
 	"cis-foundations": "checks defined here: " +
 		"https://d0.awsstatic.com/whitepapers/compliance/AWS_CIS_Foundations_Benchmark.pdf",
-	"kms": "Key Management Service best practices (under development)",
+	"aws-trusted-advisor": "AWS Trusted Advisor checks",
+	"kms":                 "Key Management Service best practices (under development)",
 }
 
 func List() {

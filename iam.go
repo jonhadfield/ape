@@ -1105,7 +1105,7 @@ func processIAMErrors(l []interface{}, err error, planItem PlanItem) (outputErr 
 		switch resource {
 		case "User":
 			if strings.Contains(awsErr.Message(), "iam:ListUsers") {
-				outputErr = policyItemOutputError{message: fmt.Sprintf("failed: missing required permission \"iam:ListUsers\" on resource \"arn:aws:iam::%s:user/\" to run this policy", planItem.Target.AccountID), error: err, level: "error"}
+				outputErr = policyItemOutputError{message: fmt.Sprintf("failed: missing required permission \"iam:ListUsers\" on resource \"arn:aws-trusted-advisor:iam::%s:user/\" to run this policy", planItem.Target.AccountID), error: err, level: "error"}
 			} else if strings.Contains(awsErr.Message(), "iam:GenerateCredentialReport") {
 				outputErr = policyItemOutputError{message: "failed: missing required permission \"iam:GenerateCredentialReport\"", error: err, level: "error"}
 			} else if strings.Contains(awsErr.Message(), "iam:GetCredentialReport") {
@@ -1125,7 +1125,7 @@ func processIAMErrors(l []interface{}, err error, planItem PlanItem) (outputErr 
 			}
 		case "Policy":
 			if strings.Contains(awsErr.Message(), "iam:ListPolicies") {
-				outputErr = policyItemOutputError{message: fmt.Sprintf("failed: missing required permission \"iam:ListPolicies\" on resource \"arn:aws:iam::%s:policy/\" to run this policy", planItem.Target.AccountID), error: err, level: "error"}
+				outputErr = policyItemOutputError{message: fmt.Sprintf("failed: missing required permission \"iam:ListPolicies\" on resource \"arn:aws-trusted-advisor:iam::%s:policy/\" to run this policy", planItem.Target.AccountID), error: err, level: "error"}
 			} else if strings.Contains(awsErr.Message(), "iam:ListPolicyVersions") {
 				outputErr = policyItemOutputError{message: "failed: missing required permission \"iam:ListPolicyVersions\" to run this policy", error: err, level: "error"}
 			} else if strings.Contains(awsErr.Message(), "iam:GetPolicyVersion") {
@@ -1135,7 +1135,7 @@ func processIAMErrors(l []interface{}, err error, planItem PlanItem) (outputErr 
 			}
 		case "Role":
 			if strings.Contains(awsErr.Message(), "iam:ListRoles") {
-				outputErr = policyItemOutputError{message: fmt.Sprintf("failed: missing permission \"iam:ListRoles\" on resource \"arn:aws:iam::%s:role/\" to run this policy", planItem.Target.AccountID), error: err, level: "error"}
+				outputErr = policyItemOutputError{message: fmt.Sprintf("failed: missing permission \"iam:ListRoles\" on resource \"arn:aws-trusted-advisor:iam::%s:role/\" to run this policy", planItem.Target.AccountID), error: err, level: "error"}
 			} else if strings.Contains(awsErr.Message(), "iam:ListAttachedRolePolicies") {
 				outputErr = policyItemOutputError{message: "failed: missing required permission \"iam:ListAttachedRolePolicies\"", error: err, level: "error"}
 

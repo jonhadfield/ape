@@ -184,7 +184,7 @@ policies:
       - criterion: HasManagedPolicyAttached
         comparison: "in"
         values:
-          - "arn:aws:iam::aws:policy/AWSSupportAccess"
+          - "arn:aws-trusted-advisor:iam::aws-trusted-advisor:policy/AWSSupportAccess"
 
   - name: "Do not setup access keys during initial user setup for all IAM users that have a console password"
     severity: "low"

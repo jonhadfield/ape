@@ -433,7 +433,7 @@ bucket:
 					output = appendPolicyOutput(l, output, createPolicyOutputInput{
 						PlanItem: planItem,
 						OutputErr: policyItemOutputError{
-							message: fmt.Sprintf("failed to get region for: arn:aws:s3:::%s", *bucketItem.bucket.Name),
+							message: fmt.Sprintf("failed to get region for: arn:aws-trusted-advisor:s3:::%s", *bucketItem.bucket.Name),
 							level:   "error",
 							error:   err,
 						},
@@ -457,7 +457,7 @@ bucket:
 							outputErr.level = "error"
 							outputErr.error = err
 						default:
-							outputErr.message = fmt.Sprintf("failed: unhandled exception getting ACL for: arn:aws:s3:::%s", *bucketItem.bucket.Name)
+							outputErr.message = fmt.Sprintf("failed: unhandled exception getting ACL for: arn:aws-trusted-advisor:s3:::%s", *bucketItem.bucket.Name)
 							outputErr.level = "error"
 							outputErr.error = err
 						}

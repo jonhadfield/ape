@@ -212,7 +212,7 @@ func TestFilterHasManagedPolicyAttached(t *testing.T) {
 		var f = root.Filter{
 			Criterion:  "HasManagedPolicyAttached",
 			Comparison: "in",
-			Values:     []string{"arn:aws:iam::aws:policy/AWSSupportAcces"},
+			Values:     []string{"arn:aws-trusted-advisor:iam::aws-trusted-advisor:policy/AWSSupportAcces"},
 		}
 		Convey("When the managed policy exists", func() {
 			mockSvc := &MockIAMClient{}

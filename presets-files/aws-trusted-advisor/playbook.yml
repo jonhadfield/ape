@@ -1,10 +1,11 @@
-#---
-#policies: ./policies.yml
+---
+policies: ./policies.yml
+
 #
-#plays:
-#   - name: "EBS public snapshots"
-#     policies:
-#       - ""
+plays:
+   - name: "EBS public snapshots"
+     policies:
+       - "public ebs snapshots"
 #   - name: "Amazon RDS Public Snapshots"
 #     policies:
 #       - ""

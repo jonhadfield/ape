@@ -117,9 +117,9 @@ var (
 	listPresets         = kingpin.Flag("list-presets", "list available presets").Bool()
 	generatePreset      = kingpin.Flag("generate-preset", "generate playbook and policies from presets-files").String()
 	runPreset           = kingpin.Flag("run-preset", "run a preset").String()
-	accessKeyID         = kingpin.Flag("access-key-id", "aws credential: access key id").String()
-	secretAccessKey     = kingpin.Flag("secret-access-key", "aws credential: secret access key").String()
-	sessionToken        = kingpin.Flag("session-token", "aws credential: session token").String()
+	accessKeyID         = kingpin.Flag("access-key-id", "aws-trusted-advisor credential: access key id").String()
+	secretAccessKey     = kingpin.Flag("secret-access-key", "aws-trusted-advisor credential: secret access key").String()
+	sessionToken        = kingpin.Flag("session-token", "aws-trusted-advisor credential: session token").String()
 )
 
 var apeUsageTemplate = `{{define "FormatCommand"}}\

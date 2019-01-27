@@ -188,6 +188,13 @@ var ec2VolumeCriteria = Criteria{
 	},
 }
 
+var ec2SnapshotCriteria = Criteria{
+	{
+		Name:        "Public",
+		Comparisons: []string{"bool"},
+	},
+}
+
 var ec2SecurityGroupCriteria = Criteria{
 	{
 		Name:        "GroupName",
@@ -413,6 +420,10 @@ var ec2Resources Resources = []Resource{
 	{
 		Name:     "Volume",
 		Criteria: ec2VolumeCriteria,
+	},
+	{
+		Name:     "Snapshot",
+		Criteria: ec2SnapshotCriteria,
 	},
 	{
 		Name:     "SecurityGroup",

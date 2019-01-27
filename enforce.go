@@ -294,7 +294,7 @@ func getAccountID(l []interface{}, sess *session.Session) (id string) {
 	h.Debug(l, "getting account id using sts")
 	stsSvc := sts.New(sess)
 	callerID, err := stsSvc.GetCallerIdentity(&sts.GetCallerIdentityInput{})
-	credsNotFoundMessage := "credentials not found\nsee: https://docs.aws.amazon.com/cli/" +
+	credsNotFoundMessage := "credentials not found\nsee: https://docs.aws-trusted-advisor.amazon.com/cli/" +
 		"latest/userguide/cli-chap-getting-started.html#cli-quick-configuration"
 	if err != nil {
 		if awsErr, okBPA2 := errors.Cause(err).(awserr.Error); okBPA2 {
@@ -322,7 +322,7 @@ func getAccountID(l []interface{}, sess *session.Session) (id string) {
 			}
 		}
 	} else if callerID.Arn == nil {
-		err = errors.New("credentials not found\nsee: https://docs.aws.amazon.com/cli/" +
+		err = errors.New("credentials not found\nsee: https://docs.aws-trusted-advisor.amazon.com/cli/" +
 			"latest/userguide/cli-chap-getting-started.html#cli-quick-configuration")
 		h.OutputError(err)
 		os.Exit(1)

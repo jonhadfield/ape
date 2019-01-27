@@ -37,12 +37,21 @@ var allEC2InstancesByAccount map[string][]ec2Instance
 var noEC2InstancesByAccount map[string]bool
 var allEC2VolumesByAccount map[string][]ec2Volume
 var noEC2VolumesByAccount map[string]bool
+
+var allEC2SnapshotsByAccount map[string][]ec2Snapshot
+var noEC2SnapshotsByAccount map[string]bool
 var allEC2SecurityGroupsByAccount map[string][]ec2SecurityGroup
 var noEC2SecurityGroupsByAccount map[string]bool
 
 type ec2Instance struct {
 	instance ec2.Instance
 	region   string
+}
+
+type ec2Snapshot struct {
+	snapshot ec2.Snapshot
+	region   string
+	public   bool
 }
 
 type ec2Volume struct {
@@ -64,6 +73,47 @@ func describeGroups(svc ec2iface.EC2API) (groups []*ec2.SecurityGroup, err error
 		return
 	}
 	groups = append(groups, describeSecurityGroupsOutput.SecurityGroups...)
+	return
+}
+
+func loadEC2Snapshots(l []interface{}, session *session.Session, accountID string, regions []string) (err error) {
+	var allEC2SnapshotsByAccountMutex sync.Mutex
+	if allEC2SnapshotsByAccount == nil {
+		allEC2SnapshotsByAccount = make(map[string][]ec2Snapshot)
+	}
+	if noEC2SnapshotsByAccount == nil {
+		noEC2SnapshotsByAccount = make(map[string]bool)
+	}
+	var ch = make(chan error)
+
+	for _, region := range regions {
+		go func(region string) {
+			var routineErr error
+			h.Debug(l, fmt.Sprintf("loading snapshots for region: %s\n", region))
+			svc := getEC2Client(session, accountID, region)
+			var snapshots []ec2Snapshot
+			snapshots, routineErr = listSnapshots(svc, accountID, region)
+			if routineErr == nil {
+				for _, snapshot := range snapshots {
+					allEC2SnapshotsByAccountMutex.Lock()
+					allEC2SnapshotsByAccount[accountID] = append(allEC2SnapshotsByAccount[accountID], snapshot)
+					allEC2SnapshotsByAccountMutex.Unlock()
+				}
+			}
+			ch <- errors.WithStack(routineErr)
+		}(region)
+	}
+
+	for i := 1; i <= len(regions); i++ {
+		err = <-ch
+		if err != nil {
+			return
+		}
+	}
+
+	if len(allEC2SnapshotsByAccount[accountID]) == 0 {
+		noEC2SnapshotsByAccount[accountID] = true
+	}
 	return
 }
 
@@ -105,8 +155,8 @@ func loadEC2Volumes(l []interface{}, session *session.Session, accountID string,
 		}
 	}
 
-	if len(allEC2VolumesByAccount[accountID]) == 0 {
-		noEC2VolumesByAccount[accountID] = true
+	if len(allEC2SnapshotsByAccount[accountID]) == 0 {
+		noEC2SnapshotsByAccount[accountID] = true
 	}
 	return
 }
@@ -211,6 +261,56 @@ func listVolumes(svc ec2iface.EC2API) (volumes []*ec2.Volume, err error) {
 	return
 }
 
+func listSnapshots(svc ec2iface.EC2API, accountID, region string) (snapshots []ec2Snapshot, err error) {
+	var allOwnedPrivateOutput, allOwnedPublicOutput *ec2.DescribeSnapshotsOutput
+	accIDPtr := h.PtrToStr(accountID)
+	allOwnedPrivateInput := &ec2.DescribeSnapshotsInput{
+		OwnerIds:            []*string{accIDPtr},
+		RestorableByUserIds: []*string{accIDPtr},
+	}
+	allOwnedPublicInput := &ec2.DescribeSnapshotsInput{
+		OwnerIds:            []*string{accIDPtr},
+		RestorableByUserIds: []*string{h.PtrToStr("all")},
+	}
+	allOwnedPrivateOutput, err = svc.DescribeSnapshots(allOwnedPrivateInput)
+	if err != nil {
+		return
+	}
+	allOwnedPublicOutput, err = svc.DescribeSnapshots(allOwnedPublicInput)
+	if err != nil {
+		return
+	}
+
+	var priSnapshots []ec2Snapshot
+	for _, pri := range allOwnedPrivateOutput.Snapshots {
+		priSnapshots = append(priSnapshots, ec2Snapshot{
+			snapshot: *pri,
+			region:   region,
+		})
+	}
+	var pubSnapshots []ec2Snapshot
+	for _, pub := range allOwnedPublicOutput.Snapshots {
+		pubSnapshots = append(priSnapshots, ec2Snapshot{
+			snapshot: *pub,
+			region:   region,
+		})
+	}
+
+	for _, pri := range priSnapshots {
+		var isPub bool
+		for _, pub := range pubSnapshots {
+			if pri.snapshot.SnapshotId == pub.snapshot.SnapshotId {
+				isPub = true
+			}
+		}
+		if isPub {
+			pri.public = true
+		}
+		snapshots = append(snapshots, pri)
+	}
+	return
+}
+
 func enforceEC2Policy(l []interface{}, session *session.Session,
 	planItem PlanItem) (output enforcePolicyOutput, err error) {
 	_, resource, err := h.GetResourceParts(planItem.Policy.Resource)
@@ -222,6 +322,8 @@ func enforceEC2Policy(l []interface{}, session *session.Session,
 		output, err = enforceInstancePolicy(l, session, planItem)
 	case "Volume":
 		output, err = enforceVolumePolicy(l, session, planItem.Target.AccountID, planItem)
+	case "Snapshot":
+		output, err = enforceSnapshotPolicy(l, session, planItem.Target.AccountID, planItem)
 	case "SecurityGroup":
 		output, err = enforceSecurityGroupPolicy(l, session, planItem.Target.AccountID, planItem)
 	case "Vpc":
@@ -261,7 +363,7 @@ func processEC2Errors(l []interface{}, err error, planItem PlanItem) (outputErr 
 			} else if strings.Contains(awsErr.Message(), "iam:ListPolicies") {
 				outputErr =
 					policyItemOutputError{message: fmt.Sprintf("failed: missing required permission "+
-						"\"iam:ListPolicies\" on resource \"arn:aws:iam::%s:policy/\"",
+						"\"iam:ListPolicies\" on resource \"arn:aws-trusted-advisor:iam::%s:policy/\"",
 						planItem.Target.AccountID), error: err, level: "error"}
 			} else if strings.Contains(awsErr.Message(), "iam:ListPolicyVersions") {
 				outputErr = policyItemOutputError{message: "failed: missing required permission " +
@@ -337,6 +439,16 @@ func filterVolumeAttached(volume ec2Volume, filter *r.Filter) (filterMatch bool)
 	return
 }
 
+func filterSnapshotPublic(snapshot ec2Snapshot, filter *r.Filter) (filterMatch bool) {
+	if filter.Value == "true" {
+		if snapshot.public {
+			filterMatch = true
+			return
+		}
+	}
+	return
+}
+
 func enforceVolumePolicy(l []interface{},
 	session *session.Session, accountID string, planItem PlanItem) (output enforcePolicyOutput, err error) {
 	h.Debug(l, "enforcing volume policy")
@@ -391,6 +503,70 @@ func enforceVolumePolicy(l []interface{},
 				Region:       volume.region,
 				ResourceName: getNameTag(volume.volume.Tags),
 				ResourceArn:  *volume.volume.VolumeId,
+				IssuesFound:  true,
+			})
+		}
+	}
+	if !anyFiltersMatch {
+		output, err = processZeroMatches(l, processZeroMatchesInput{PlanItem: planItem})
+	}
+	return
+}
+
+func enforceSnapshotPolicy(l []interface{},
+	session *session.Session, accountID string, planItem PlanItem) (output enforcePolicyOutput, err error) {
+	h.Debug(l, "enforcing snapshot policy")
+	var outputErr policyItemOutputError
+	if len(allEC2SnapshotsByAccount[planItem.Target.AccountID]) < 1 && !noEC2SnapshotsByAccount[planItem.Target.AccountID] {
+		err = loadEC2Snapshots(l, session, planItem.Target.AccountID, planItem.Target.Regions)
+		if err != nil {
+			outputErr = processEC2Errors(l, err, planItem)
+			output = appendPolicyOutput(l, output, createPolicyOutputInput{
+				PlanItem:    planItem,
+				IssuesFound: true,
+				OutputErr:   outputErr,
+			})
+			logPolicyOutputItemError(l, outputErr)
+			return
+		}
+	}
+
+	snapshots := allEC2SnapshotsByAccount[accountID]
+	// Loop through regions
+	var filtersMatch bool
+	var anyFiltersMatch bool
+	for i := range snapshots {
+		snapshot := snapshots[i]
+		var filterMatch bool
+		if isIgnored(isIgnoredInput{
+			planItem:    planItem,
+			resourceIDs: []string{getNameTag(snapshot.snapshot.Tags), *snapshot.snapshot.VolumeId},
+			itemRegion:  snapshot.region,
+		}) {
+			continue
+		}
+		for _, filter := range planItem.Policy.Filters {
+			switch filter.Criterion {
+			case "Public":
+				filterMatch = filterSnapshotPublic(snapshot, &filter)
+			}
+
+			// If not found, then no point running more filters
+			if !filterMatch {
+				filtersMatch = false
+				break
+			} else {
+				filtersMatch = true
+			}
+		}
+		if filtersMatch {
+			// We've got at least one set of matches
+			anyFiltersMatch = true
+			output = appendPolicyOutput(l, output, createPolicyOutputInput{
+				PlanItem:     planItem,
+				Region:       snapshot.region,
+				ResourceName: getNameTag(snapshot.snapshot.Tags),
+				ResourceArn:  *snapshot.snapshot.SnapshotId,
 				IssuesFound:  true,
 			})
 		}
