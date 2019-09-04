@@ -147,7 +147,6 @@ func loadTrails(l []interface{}, session *session.Session, accountID string, reg
 	numRegions := len(regions)
 	var ch = make(chan error)
 	for _, region := range regions {
-		fmt.Println("CT region:", region)
 		svc := getCloudtrailClient(l, session, accountID, region)
 		go func(region string) {
 			var routineErr error
