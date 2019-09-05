@@ -312,7 +312,7 @@ func getMetricAlarmsByMetricName(cwSvc cloudwatchiface.CloudWatchAPI, metricName
 	return
 }
 
-func filterMetricFilterPattern(l []interface{}, cwlSvc cloudwatchlogsiface.CloudWatchLogsAPI, cwSvc cloudwatchiface.CloudWatchAPI, snsSvc *snsiface.SNSAPI, trail cloudtrailTrail, filterPattern string) (result bool, err error) {
+func filterMetricFilterPattern(l []interface{}, cwlSvc cloudwatchlogsiface.CloudWatchLogsAPI, cwSvc cloudwatchiface.CloudWatchAPI, snsSvc *snsiface.SNSAPI, trail cloudtrailTrail, filterPattern, accountID string) (result bool, err error) {
 	h.Debug(l, fmt.Sprintf("filtering by metric pattern: %s", filterPattern))
 	// get cloudwatch log group
 	if trail.trail.CloudWatchLogsLogGroupArn == nil {
@@ -334,7 +334,13 @@ func filterMetricFilterPattern(l []interface{}, cwlSvc cloudwatchlogsiface.Cloud
 		}
 		for i := range metricAlarms {
 			for _, action := range metricAlarms[i].AlarmActions {
+				// not possible to get subscriptions for a topic
+				// we don't own, so assume we don't
+				if !strings.Contains(*action, accountID) {
+					continue
+				}
 				var subscriptions []*sns.Subscription
+
 				subscriptions, err = getSubscriptionsByTopicArn(*snsSvc, *action)
 				if err != nil {
 					return
@@ -386,7 +392,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 				switch filter.Criterion {
 				case "HasAlarmWithSubscriberForUnauthorizedAPICalls":
 					var exists bool
-					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail, `($.errorCode = "*UnauthorizedOperation") || ($.errorCode = "AccessDenied*")`)
+					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail, `($.errorCode = "*UnauthorizedOperation") || ($.errorCode = "AccessDenied*")`, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
@@ -395,7 +401,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 
 				case "HasAlarmWithSubscriberForConsoleSignInsWithoutMFA":
 					var exists bool
-					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail, `($.eventName = "ConsoleLogin") && ($.additionalEventData.MFAUsed != "Yes")`)
+					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail, `($.eventName = "ConsoleLogin") && ($.additionalEventData.MFAUsed != "Yes")`, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
@@ -403,7 +409,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 					}
 				case "HasAlarmWithSubscriberForRootAccountUsage":
 					var exists bool
-					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail, `$.userIdentity.type = "Root" && $.userIdentity.invokedBy NOT EXISTS && $.eventType != "AwsServiceEvent`)
+					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail, `$.userIdentity.type = "Root" && $.userIdentity.invokedBy NOT EXISTS && $.eventType != "AwsServiceEvent`, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
@@ -411,7 +417,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 					}
 				case "HasAlarmWithSubscriberForIAMPolicyChanges":
 					var exists bool
-					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail, `($.eventName=DeleteGroupPolicy)||($.eventName=DeleteRolePolicy)||($.eventName=DeleteUserPolicy)||($.eventName=PutGroupPolicy)||($.eventName=PutRolePolicy)||($.eventName=PutUserPolicy)||($.eventName=CreatePolicy)||($.eventName=DeletePolicy)||($.eventName=CreatePolicyVersion)||($.eventName=DeletePolicyVersion)||($.eventName=AttachRolePolicy)||($.eventName=DetachRolePolicy)||($.eventName=AttachUserPolicy)||($.eventName=DetachUserPolicy)||($.eventName=AttachGroupPolicy)||($.eventName=DetachGroupPolicy)`)
+					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail, `($.eventName=DeleteGroupPolicy)||($.eventName=DeleteRolePolicy)||($.eventName=DeleteUserPolicy)||($.eventName=PutGroupPolicy)||($.eventName=PutRolePolicy)||($.eventName=PutUserPolicy)||($.eventName=CreatePolicy)||($.eventName=DeletePolicy)||($.eventName=CreatePolicyVersion)||($.eventName=DeletePolicyVersion)||($.eventName=AttachRolePolicy)||($.eventName=DetachRolePolicy)||($.eventName=AttachUserPolicy)||($.eventName=DetachUserPolicy)||($.eventName=AttachGroupPolicy)||($.eventName=DetachGroupPolicy)`, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
@@ -419,7 +425,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 					}
 				case "HasAlarmWithSubscriberForCloudTrailConfigChanges":
 					var exists bool
-					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail, `($.eventName = CreateTrail) || ($.eventName = UpdateTrail) || ($.eventName = DeleteTrail) || ($.eventName = StartLogging) || ($.eventName = StopLogging)`)
+					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail, `($.eventName = CreateTrail) || ($.eventName = UpdateTrail) || ($.eventName = DeleteTrail) || ($.eventName = StartLogging) || ($.eventName = StopLogging)`, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
@@ -428,7 +434,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 				case "HasAlarmWithSubscriberForAWSConsoleAuthFailures":
 					var exists bool
 					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail,
-						`($.eventName = ConsoleLogin) && ($.errorMessage = "Failedauthentication")`)
+						`($.eventName = ConsoleLogin) && ($.errorMessage = "Failedauthentication")`, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
@@ -438,7 +444,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 				case "HasAlarmWithSubscriberForDisablingOrScheduledDeletionOfCMK":
 					var exists bool
 					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail,
-						`($.eventSource = kms.amazonaws.com) && (($.eventName=DisableKey)||($.eventName=ScheduleKeyDeletion))`)
+						`($.eventSource = kms.amazonaws.com) && (($.eventName=DisableKey)||($.eventName=ScheduleKeyDeletion))`, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
@@ -447,7 +453,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 				case "HasAlarmWithSubscriberForS3BucketPolicyChanges":
 					var exists bool
 					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail,
-						` ($.eventSource = s3.amazonaws.com) && (($.eventName = PutBucketAcl) || ($.eventName = PutBucketPolicy) || ($.eventName = PutBucketCors) || ($.eventName = PutBucketLifecycle) || ($.eventName = PutBucketReplication) || ($.eventName = DeleteBucketPolicy) || ($.eventName = DeleteBucketCors) || ($.eventName = DeleteBucketLifecycle) || ($.eventName = DeleteBucketReplication))`)
+						` ($.eventSource = s3.amazonaws.com) && (($.eventName = PutBucketAcl) || ($.eventName = PutBucketPolicy) || ($.eventName = PutBucketCors) || ($.eventName = PutBucketLifecycle) || ($.eventName = PutBucketReplication) || ($.eventName = DeleteBucketPolicy) || ($.eventName = DeleteBucketCors) || ($.eventName = DeleteBucketLifecycle) || ($.eventName = DeleteBucketReplication))`, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
@@ -456,7 +462,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 				case "HasAlarmWithSubscriberForConfigChanges":
 					var exists bool
 					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail,
-						`($.eventSource = config.amazonaws.com) && (($.eventName=StopConfigurationRecorder)||($.eventName=DeleteDeliveryChannel)||($.eventName=PutDeliveryChannel)||($.eventName=PutConfigurationRecorder))`)
+						`($.eventSource = config.amazonaws.com) && (($.eventName=StopConfigurationRecorder)||($.eventName=DeleteDeliveryChannel)||($.eventName=PutDeliveryChannel)||($.eventName=PutConfigurationRecorder))`, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
@@ -465,7 +471,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 				case "HasAlarmWithSubscriberForSecGroupChanges":
 					var exists bool
 					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail,
-						` ($.eventName = AuthorizeSecurityGroupIngress) || ($.eventName = AuthorizeSecurityGroupEgress) || ($.eventName = RevokeSecurityGroupIngress) || ($.eventName = RevokeSecurityGroupEgress) || ($.eventName = CreateSecurityGroup) || ($.eventName = DeleteSecurityGroup)`)
+						` ($.eventName = AuthorizeSecurityGroupIngress) || ($.eventName = AuthorizeSecurityGroupEgress) || ($.eventName = RevokeSecurityGroupIngress) || ($.eventName = RevokeSecurityGroupEgress) || ($.eventName = CreateSecurityGroup) || ($.eventName = DeleteSecurityGroup)`, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
@@ -474,7 +480,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 				case "HasAlarmWithSubscriberForNACLChanges":
 					var exists bool
 					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail,
-						`($.eventName = CreateNetworkAcl) || ($.eventName = CreateNetworkAclEntry) || ($.eventName = DeleteNetworkAcl) || ($.eventName = DeleteNetworkAclEntry) || ($.eventName = ReplaceNetworkAclEntry) || ($.eventName = ReplaceNetworkAclAssociation)`)
+						`($.eventName = CreateNetworkAcl) || ($.eventName = CreateNetworkAclEntry) || ($.eventName = DeleteNetworkAcl) || ($.eventName = DeleteNetworkAclEntry) || ($.eventName = ReplaceNetworkAclEntry) || ($.eventName = ReplaceNetworkAclAssociation)`, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
@@ -483,7 +489,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 				case "HasAlarmWithSubscriberForNetworkGatewayChanges":
 					var exists bool
 					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail,
-						` ($.eventName = CreateCustomerGateway) || ($.eventName = DeleteCustomerGateway) || ($.eventName = AttachInternetGateway) || ($.eventName = CreateInternetGateway) || ($.eventName = DeleteInternetGateway) || ($.eventName = DetachInternetGateway)`)
+						` ($.eventName = CreateCustomerGateway) || ($.eventName = DeleteCustomerGateway) || ($.eventName = AttachInternetGateway) || ($.eventName = CreateInternetGateway) || ($.eventName = DeleteInternetGateway) || ($.eventName = DetachInternetGateway)`, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
@@ -492,7 +498,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 				case "HasAlarmWithSubscriberForRouteTableChanges":
 					var exists bool
 					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail,
-						`($.eventName = CreateRoute) || ($.eventName = CreateRouteTable) || ($.eventName = ReplaceRoute) || ($.eventName = ReplaceRouteTableAssociation) || ($.eventName = DeleteRouteTable) || ($.eventName = DeleteRoute) || ($.eventName = DisassociateRouteTable)`)
+						`($.eventName = CreateRoute) || ($.eventName = CreateRouteTable) || ($.eventName = ReplaceRoute) || ($.eventName = ReplaceRouteTableAssociation) || ($.eventName = DeleteRouteTable) || ($.eventName = DeleteRoute) || ($.eventName = DisassociateRouteTable)`, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
@@ -501,7 +507,7 @@ func enforceTrailPolicy(l []interface{}, session *session.Session, planItem Plan
 				case "HasAlarmWithSubscriberForVPCChanges":
 					var exists bool
 					exists, err = filterMetricFilterPattern(l, cwlSvc, cwSvc, &snslSvc, trail,
-						` ($.eventName = CreateVpc) || ($.eventName = DeleteVpc) || ($.eventName = ModifyVpcAttribute) || ($.eventName = AcceptVpcPeeringConnection) || ($.eventName = CreateVpcPeeringConnection) || ($.eventName = DeleteVpcPeeringConnection) || ($.eventName = RejectVpcPeeringConnection) || ($.eventName = AttachClassicLinkVpc) || ($.eventName = DetachClassicLinkVpc) || ($.eventName = DisableVpcClassicLink) || ($.eventName = EnableVpcClassicLink) `)
+						` ($.eventName = CreateVpc) || ($.eventName = DeleteVpc) || ($.eventName = ModifyVpcAttribute) || ($.eventName = AcceptVpcPeeringConnection) || ($.eventName = CreateVpcPeeringConnection) || ($.eventName = DeleteVpcPeeringConnection) || ($.eventName = RejectVpcPeeringConnection) || ($.eventName = AttachClassicLinkVpc) || ($.eventName = DetachClassicLinkVpc) || ($.eventName = DisableVpcClassicLink) || ($.eventName = EnableVpcClassicLink) `, planItem.Target.AccountID)
 					if filter.Value == "true" && exists {
 						filterMatch = true
 					} else if filter.Value == "false" && !exists {
