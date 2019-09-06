@@ -429,8 +429,8 @@ func main() {
 		failures, err = plan.Enforce(loggers, *enforceInput)
 		if err != nil {
 			if awsErr, okBPA2 := errors.Cause(err).(awserr.Error); okBPA2 {
-				if awsErr.Code() == "AccessDenied" && strings.Contains(awsErr.Message(), "sts:AssumeRole") {
-					// don't ignore assume role errors
+				if awsErr.Code() == "AccessDenied" {
+					// don't ignore access denied errors
 					h.OutputError(err)
 					os.Exit(1)
 				}
