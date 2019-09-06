@@ -417,9 +417,8 @@ func (p plan) Enforce(l []interface{}, input EnforcePlanInput) (failures bool, e
 					ExternalID: planItem.Target.ExternalID,
 				})
 				if getCredsErr != nil {
-
 					return true, errors.WithMessage(getCredsErr,
-						fmt.Sprintf("role arn: %s", planItem.Target.Role))
+						fmt.Sprintf("account: %s role: %s", planItem.Target.AccountID, planItem.Target.Role))
 				}
 				var newSessionErr error
 				newSess, newSessionErr = session.NewSession(&aws.Config{Credentials: creds})
