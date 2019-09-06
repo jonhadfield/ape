@@ -376,6 +376,7 @@ func (p plan) Enforce(l []interface{}, input EnforcePlanInput) (failures bool, e
 			ExternalID: input.ExternalID,
 		})
 		if getInitialCredsErr != nil {
+			fmt.Println("error: failed to assume role:", input.RoleArn)
 			err = errors.WithStack(getInitialCredsErr)
 			return
 		}
