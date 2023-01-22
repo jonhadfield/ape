@@ -22,6 +22,9 @@ fmt:
 critic:
 	gocritic check-project .
 
+find-updates:
+	go list -u -m -json all | go-mod-outdated -update -direct
+
 lint:
 	gometalinter -e testing.go -e validation_test.go -e presets-data.go --vendor --disable-all \
 		--enable=deadcode \
