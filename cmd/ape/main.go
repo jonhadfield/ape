@@ -17,10 +17,12 @@
 package main
 
 import (
-	"github.com/alecthomas/kingpin/v2"
 	"os"
 
+	"github.com/alecthomas/kingpin/v2"
+
 	"fmt"
+
 	"github.com/RackSec/srslog"
 
 	"reflect"

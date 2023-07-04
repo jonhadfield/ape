@@ -16,10 +16,9 @@
 
 package root
 
-import "time"
-
 import (
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 )
