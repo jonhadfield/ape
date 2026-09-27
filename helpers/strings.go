@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 func StringInSlice(a string, list []string) bool {
@@ -57,7 +57,7 @@ func PadToWidth(input, char string, inputLengthOverride int, trimToWidth bool) (
 	}
 	var paddingSize int
 	for i, line := range lines {
-		width, _, _ := terminal.GetSize(0)
+		width, _, _ := term.GetSize(0)
 		if width == -1 {
 			width = 80
 		}
