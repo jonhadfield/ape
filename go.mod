@@ -15,7 +15,7 @@ require (
 	github.com/smartystreets/goconvey v1.6.3
 	github.com/texttheater/golang-levenshtein v1.0.1
 	golang.org/x/net v0.10.0
-	golang.org/x/term v0.46.0
+	golang.org/x/term v0.28.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -33,8 +33,8 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/smartystreets/assertions v1.13.1 // indirect
 	github.com/xhit/go-str2duration/v2 v2.1.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
 
-go 1.26.0
+go 1.21
