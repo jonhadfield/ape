@@ -39,7 +39,7 @@ import (
 	h "github.com/jonhadfield/ape/helpers"
 	r "github.com/jonhadfield/ape/root"
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 type EnforcePlanInput struct {
@@ -445,7 +445,7 @@ func (p plan) Enforce(l []interface{}, input EnforcePlanInput) (failures bool, e
 			}
 			statusOutput := fmt.Sprintf("Processing: [%s] %s...", shortAccountOutput, planItem.Policy.Name)
 			statusOutput = h.PadToWidth(statusOutput, " ", 0, true)
-			width, _, _ := terminal.GetSize(0)
+			width, _, _ := term.GetSize(0)
 			if len(statusOutput) == width {
 				fmt.Printf(statusOutput[0:width-3] + "   \r")
 			} else {
